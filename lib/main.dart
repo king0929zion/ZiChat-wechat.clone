@@ -144,11 +144,11 @@ class MyApp extends StatelessWidget {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: _SmoothPageTransitionsBuilder(),
+            TargetPlatform.iOS: _SmoothPageTransitionsBuilder(),
+            TargetPlatform.windows: _SmoothPageTransitionsBuilder(),
+            TargetPlatform.macOS: _SmoothPageTransitionsBuilder(),
+            TargetPlatform.linux: _SmoothPageTransitionsBuilder(),
           },
         ),
         useMaterial3: true,
@@ -200,7 +200,25 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 _HomeHeader(currentIndex: _currentIndex),
                 Expanded(
-                  child: _buildBody(),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      final curved = CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeInOutCubic,
+                      );
+                      return FadeTransition(
+                        opacity: curved,
+                        child: child,
+                      );
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey<int>(_currentIndex),
+                      child: _buildBody(),
+                    ),
+                  ),
                 ),
                 _HomeTabBar(
                   currentIndex: _currentIndex,
@@ -214,6 +232,40 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _SmoothPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (route.settings.name == Navigator.defaultRouteName) {
+      return child;
+    }
+
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeInOutCubic,
+      reverseCurve: Curves.easeInOutCubic,
+    );
+
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.02, 0),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
       ),
     );
   }
