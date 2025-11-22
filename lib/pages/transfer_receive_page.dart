@@ -28,6 +28,81 @@ class _TransferReceivePageState extends State<TransferReceivePage> {
     final String title =
         isReceived ? '你已收款，资金已存入零钱' : '待你收款';
 
+    final List<Widget> children = [
+      _buildHeader(context),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 56),
+            _buildStatusIcon(isReceived),
+            const SizedBox(height: 24),
+            Center(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF1D2129),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                '¥${widget.amount}',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF111111),
+                ),
+              ),
+            ),
+            if (isReceived) ...[
+              const SizedBox(height: 8),
+              const Center(
+                child: Text(
+                  '零钱余额',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF07C160),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 32),
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFFE5E5E5),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 12,
+              ),
+              child: Column(
+                children: [
+                  _buildInfoRow(
+                    '转账时间',
+                    _formatCnDateTime(_transferTime),
+                  ),
+                  if (isReceived && _receiveTime != null)
+                    _buildInfoRow(
+                      '收款时间',
+                      _formatCnDateTime(_receiveTime!),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    if (!isReceived) {
+      children.add(_buildPendingBottom(context));
+    }
+
     return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
@@ -39,76 +114,7 @@ class _TransferReceivePageState extends State<TransferReceivePage> {
             color: bg,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(context),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                    const SizedBox(height: 56),
-                    _buildStatusIcon(isReceived),
-                    const SizedBox(height: 24),
-                    Center(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF1D2129),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        '¥${widget.amount}',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF111111),
-                        ),
-                      ),
-                    ),
-                    if (isReceived) ...[
-                      const SizedBox(height: 8),
-                      const Center(
-                        child: Text(
-                          '零钱余额',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF07C160),
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 32),
-                    const Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      color: Color(0xFFE5E5E5),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      child: Column(
-                        children: [
-                          _buildInfoRow(
-                            '转账时间',
-                            _formatCnDateTime(_transferTime),
-                          ),
-                          if (isReceived && _receiveTime != null)
-                            _buildInfoRow(
-                              '收款时间',
-                              _formatCnDateTime(_receiveTime!),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (!isReceived) _buildPendingBottom(context),
-              ],
+              children: children,
             ),
           ),
         ),

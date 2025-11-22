@@ -30,143 +30,155 @@ class _PostMomentPageState extends State<PostMomentPage> {
             color: Colors.white,
             child: Column(
               children: [
-              // Header
-              Container(
-                height: 44, // HTML: height: 44px
-                padding: const EdgeInsets.symmetric(horizontal: 10), // HTML: padding: 0 10px
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Color(0xFFF0F0F0), // HTML: border-bottom: 0.5px solid #f0f0f0
-                      width: 0.5,
+                // Header
+                Container(
+                  height: 44, // HTML: height: 44px
+                  padding: const EdgeInsets.symmetric(horizontal: 10), // HTML: padding: 0 10px
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Color(0xFFF0F0F0), // HTML: border-bottom: 0.5px solid #f0f0f0
+                        width: 0.5,
+                      ),
                     ),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      padding: const EdgeInsets.all(6), // HTML: padding: 6px
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: SvgPicture.asset(
-                        'assets/icon/common/go-back.svg',
-                        width: 12,
-                        height: 20,
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFF1D2129),
-                          BlendMode.srcIn,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        padding: const EdgeInsets.all(6), // HTML: padding: 6px
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: SvgPicture.asset(
+                          'assets/icon/common/go-back.svg',
+                          width: 12,
+                          height: 20,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF1D2129),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(_textController.text.trim());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF07C160), // HTML: background: #07C160
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14, // HTML: padding: 6px 14px
-                          vertical: 6,
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(
+                            _textController.text.trim(),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF07C160), // HTML: background: #07C160
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14, // HTML: padding: 6px 14px
+                            vertical: 6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6), // HTML: border-radius: 6px
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6), // HTML: border-radius: 6px
+                        child: const Text(
+                          '发表',
+                          style: TextStyle(
+                            fontSize: 15, // HTML: font-size: 15px
+                            fontWeight: FontWeight.w500, // HTML: font-weight: 500
+                          ),
                         ),
                       ),
-                      child: const Text(
-                        '发表',
-                        style: TextStyle(
-                          fontSize: 15, // HTML: font-size: 15px
-                          fontWeight: FontWeight.w500, // HTML: font-weight: 500
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Main Content
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
+                    ],
                   ),
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 24), // HTML: padding: 12px 14px 24px
-                  children: [
-                    // 文本输入框
-                    TextField(
-                      controller: _textController,
-                      minLines: 3,
-                      maxLines: null,
-                      decoration: const InputDecoration(
-                        hintText: '这一刻的想法...', // HTML: placeholder
-                        hintStyle: TextStyle(
-                          fontSize: 16, // HTML: font-size: 16px
-                          color: Color(0xFFBBBBBB),
+                ),
+                // Main Content
+                Expanded(
+                  child: ListView(
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(
+                      14,
+                      12,
+                      14,
+                      24,
+                    ), // HTML: padding: 12px 14px 24px
+                    children: [
+                      // 文本输入框
+                      TextField(
+                        controller: _textController,
+                        minLines: 3,
+                        maxLines: null,
+                        decoration: const InputDecoration(
+                          hintText: '这一刻的想法...', // HTML: placeholder
+                          hintStyle: TextStyle(
+                            fontSize: 16, // HTML: font-size: 16px
+                            color: Color(0xFFBBBBBB),
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
                         ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF111111),
-                      ),
-                    ),
-                    const SizedBox(height: 12), // HTML: gap: 12px
-                    // 图片网格
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8, // HTML: gap: 8px
-                      mainAxisSpacing: 8,
-                      children: [
-                        _MediaItem(image: 'assets/icon/discover/top-stories.jpeg'),
-                        _MediaItem(image: 'assets/avatar-default.jpeg'),
-                        _MediaItem(image: 'assets/bella.jpeg'),
-                        _MediaItem(image: 'assets/icon/discover/games.jpeg'),
-                        _AddMediaButton(),
-                      ],
-                    ),
-                    const SizedBox(height: 26), // HTML: margin-top: 26px
-                    // 选项列表
-                    Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: Color(0xFFF0F0F0), // HTML: border-top: 0.5px solid #f0f0f0
-                            width: 0.5,
-                          ),
-                          bottom: BorderSide(
-                            color: Color(0xFFF0F0F0), // HTML: border-bottom: 0.5px solid #f0f0f0
-                            width: 0.5,
-                          ),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF111111),
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          _OptionRow(
-                            icon: 'assets/icon/discover/location.svg',
-                            label: '所在位置',
+                      const SizedBox(height: 12), // HTML: gap: 12px
+                      // 图片网格
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 8, // HTML: gap: 8px
+                        mainAxisSpacing: 8,
+                        children: const [
+                          _MediaItem(
+                            image: 'assets/icon/discover/top-stories.jpeg',
                           ),
-                          _OptionRow(
-                            icon: 'assets/icon/discover/at.svg',
-                            label: '提醒谁看',
-                          ),
-                          _OptionRow(
-                            icon: 'assets/icon/discover/location.svg', // 项目中没有 visible.svg
-                            label: '谁可以看',
-                            value: '公开',
-                            isLast: true,
-                          ),
+                          _MediaItem(image: 'assets/avatar-default.jpeg'),
+                          _MediaItem(image: 'assets/bella.jpeg'),
+                          _MediaItem(image: 'assets/icon/discover/games.jpeg'),
+                          _AddMediaButton(),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 26), // HTML: margin-top: 26px
+                      // 选项列表
+                      Container(
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              color: Color(0xFFF0F0F0), // HTML: border-top: 0.5px solid #f0f0f0
+                              width: 0.5,
+                            ),
+                            bottom: BorderSide(
+                              color:
+                                  Color(0xFFF0F0F0), // HTML: border-bottom: 0.5px solid #f0f0f0
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          children: const [
+                            _OptionRow(
+                              icon: 'assets/icon/discover/location.svg',
+                              label: '所在位置',
+                            ),
+                            _OptionRow(
+                              icon: 'assets/icon/discover/at.svg',
+                              label: '提醒谁看',
+                            ),
+                            _OptionRow(
+                              icon:
+                                  'assets/icon/discover/location.svg', // 项目中没有 visible.svg
+                              label: '谁可以看',
+                              value: '公开',
+                              isLast: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -192,6 +204,8 @@ class _MediaItem extends StatelessWidget {
 }
 
 class _AddMediaButton extends StatelessWidget {
+  const _AddMediaButton({super.key});
+
   @override
   Widget build(BuildContext context) {
     return InkWell(

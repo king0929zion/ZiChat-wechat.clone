@@ -143,64 +143,65 @@ class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
                 Expanded(
                   child: ListView(
                     children: [
-                    const _SectionTitle(label: '界面与显示'),
-                    _SettingsRow(
-                      label: '深色模式',
-                      right: _RightValueArrow(text: '已关闭'),
-                      onTap: _showFeatureDevToast,
-                    ),
-                    _SettingsRow(
-                      label: '横屏模式',
-                      right: _ToggleSwitch(
-                        active: _landscapeOn,
-                        onChanged: (_) => _toggleLandscape(),
+                      const _SectionTitle(label: '界面与显示'),
+                      _SettingsRow(
+                        label: '深色模式',
+                        right: _RightValueArrow(text: '已关闭'),
+                        onTap: _showFeatureDevToast,
                       ),
-                    ),
-                    _SettingsRow(
-                      label: 'NFC 功能',
-                      right: _ToggleSwitch(
-                        active: _nfcOn,
-                        onChanged: (_) => _toggleNfc(),
+                      _SettingsRow(
+                        label: '横屏模式',
+                        right: _ToggleSwitch(
+                          active: _landscapeOn,
+                          onChanged: (_) => _toggleLandscape(),
+                        ),
                       ),
-                    ),
-                    _SettingsRow(
-                      label: '自动下载微信安装包',
-                      right: const _RightValueArrow(
-                        text: '仅在 Wi-Fi 下下载',
+                      _SettingsRow(
+                        label: 'NFC 功能',
+                        right: _ToggleSwitch(
+                          active: _nfcOn,
+                          onChanged: (_) => _toggleNfc(),
+                        ),
                       ),
-                      onTap: _showFeatureDevToast,
-                    ),
-                    _SettingsRow(
-                      label: '语言',
-                      right: _RightValueArrow(text: _languageLabel),
-                      onTap: _openLanguageDialog,
-                    ),
-                    _SettingsRow(
-                      label: '字体大小',
-                      right: const _ArrowOnly(),
-                      onTap: _showFeatureDevToast,
-                    ),
-                    const _SettingsDivider(),
-                    const _SectionTitle(label: '关于微信'),
-                    _SettingsRow(
-                      label: '存储空间',
-                      right: const _ArrowOnly(),
-                      onTap: _showFeatureDevToast,
-                    ),
-                    _SettingsRow(
-                      label: '发现页管理',
-                      right: const _ArrowOnly(),
-                      onTap: _showFeatureDevToast,
-                    ),
-                    _SettingsRow(
-                      label: '辅助功能',
-                      right: const _ArrowOnly(),
-                      onTap: _showFeatureDevToast,
-                    ),
-                  ],
+                      _SettingsRow(
+                        label: '自动下载微信安装包',
+                        right: const _RightValueArrow(
+                          text: '仅在 Wi-Fi 下下载',
+                        ),
+                        onTap: _showFeatureDevToast,
+                      ),
+                      _SettingsRow(
+                        label: '语言',
+                        right: _RightValueArrow(text: _languageLabel),
+                        onTap: _openLanguageDialog,
+                      ),
+                      _SettingsRow(
+                        label: '字体大小',
+                        right: const _ArrowOnly(),
+                        onTap: _showFeatureDevToast,
+                      ),
+                      const _SettingsDivider(),
+                      const _SectionTitle(label: '关于微信'),
+                      _SettingsRow(
+                        label: '存储空间',
+                        right: const _ArrowOnly(),
+                        onTap: _showFeatureDevToast,
+                      ),
+                      _SettingsRow(
+                        label: '发现页管理',
+                        right: const _ArrowOnly(),
+                        onTap: _showFeatureDevToast,
+                      ),
+                      _SettingsRow(
+                        label: '辅助功能',
+                        right: const _ArrowOnly(),
+                        onTap: _showFeatureDevToast,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
