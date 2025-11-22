@@ -8,15 +8,19 @@ class ChatOptionsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEDEDED),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: const Color(0xFFEDEDED),
-          child: Column(
-            children: const [
-              _ChatOptionsHeader(),
-              Expanded(child: _ChatOptionsBody()),
-            ],
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: const Color(0xFFEDEDED),
+            child: Column(
+              children: const [
+                _ChatOptionsHeader(),
+                Expanded(child: _ChatOptionsBody()),
+              ],
+            ),
           ),
         ),
       ),

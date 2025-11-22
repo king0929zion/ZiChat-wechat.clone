@@ -30,18 +30,21 @@ class _TransferReceivePageState extends State<TransferReceivePage> {
 
     return Scaffold(
       backgroundColor: bg,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: bg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: bg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     const SizedBox(height: 56),
                     _buildStatusIcon(isReceived),
                     const SizedBox(height: 24),
@@ -104,9 +107,9 @@ class _TransferReceivePageState extends State<TransferReceivePage> {
                     ),
                   ],
                 ),
-              ),
-              if (!isReceived) _buildPendingBottom(context),
-            ],
+                if (!isReceived) _buildPendingBottom(context),
+              ],
+            ),
           ),
         ),
       ),

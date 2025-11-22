@@ -594,7 +594,7 @@ class _MomentContent extends StatelessWidget {
             fontSize: 16,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Text(
           post.content,
           style: const TextStyle(
@@ -604,7 +604,7 @@ class _MomentContent extends StatelessWidget {
           ),
         ),
         if (post.images.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           _MomentImages(images: post.images),
         ],
         const SizedBox(height: 10),

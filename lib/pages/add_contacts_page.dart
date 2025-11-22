@@ -13,24 +13,28 @@ class AddContactsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bg,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: bg,
-          child: Column(
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    _buildSearchBar(context),
-                    _buildMyWechatRow(context, textMain, textSub),
-                    _buildBackgroundImage(),
-                  ],
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: bg,
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      _buildSearchBar(context),
+                      _buildMyWechatRow(context, textMain, textSub),
+                      _buildBackgroundImage(),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

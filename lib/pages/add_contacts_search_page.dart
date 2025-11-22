@@ -54,37 +54,41 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
 
     return Scaffold(
       backgroundColor: bg,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: bg,
-          child: Column(
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSearchInput(),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '可搜索：手机号、微信号',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF8A8F99),
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: bg,
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSearchInput(),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '可搜索：手机号、微信号',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF8A8F99),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: _buildResultList(),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: _buildResultList(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

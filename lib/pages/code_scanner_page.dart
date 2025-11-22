@@ -10,15 +10,19 @@ class CodeScannerPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bg,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: bg,
-          child: Column(
-            children: [
-              _buildHeader(context),
-              const Expanded(child: _ScannerBody()),
-            ],
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: bg,
+            child: Column(
+              children: [
+                _buildHeader(context),
+                const Expanded(child: _ScannerBody()),
+              ],
+            ),
           ),
         ),
       ),

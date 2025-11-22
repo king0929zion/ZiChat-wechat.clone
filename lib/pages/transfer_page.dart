@@ -93,28 +93,32 @@ class _TransferPageState extends State<TransferPage> {
 
     return Scaffold(
       backgroundColor: bg,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: bg,
-          child: Column(
-            children: [
-              _buildTopBar(context),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-                  child: Column(
-                    children: [
-                      const _ReceiverRow(),
-                      const SizedBox(height: 4),
-                      _buildAmountPanel(),
-                      const Spacer(),
-                      _buildKeyboard(),
-                    ],
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: bg,
+            child: Column(
+              children: [
+                _buildTopBar(context),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                    child: Column(
+                      children: [
+                        const _ReceiverRow(),
+                        const SizedBox(height: 4),
+                        _buildAmountPanel(),
+                        const Spacer(),
+                        _buildKeyboard(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

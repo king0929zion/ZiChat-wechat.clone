@@ -130,16 +130,19 @@ class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
     const Color bg = Color(0xFFEDEDED);
     return Scaffold(
       backgroundColor: bg,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: bg,
-          child: Column(
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: ListView(
-                  children: [
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: bg,
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: ListView(
+                    children: [
                     const _SectionTitle(label: '界面与显示'),
                     _SettingsRow(
                       label: '深色模式',

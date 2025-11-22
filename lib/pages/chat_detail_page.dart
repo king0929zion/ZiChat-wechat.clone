@@ -191,11 +191,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-        );
+        final maxExtent = _scrollController.position.maxScrollExtent;
+        _scrollController.jumpTo(maxExtent);
       }
     });
   }

@@ -21,12 +21,15 @@ class _PostMomentPageState extends State<PostMomentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: Colors.white,
-          child: Column(
-            children: [
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: Colors.white,
+            child: Column(
+              children: [
               // Header
               Container(
                 height: 44, // HTML: height: 44px

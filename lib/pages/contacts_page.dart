@@ -16,37 +16,6 @@ class ContactsPage extends StatelessWidget {
       child: ListView(
         children: [
           const SizedBox(height: 8),
-          // 搜索栏
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-            child: Container(
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    'assets/icon/common/search.svg',
-                    width: 18,
-                    height: 18,
-                    colorFilter: const ColorFilter.mode(textSub, BlendMode.srcIn),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    '搜索',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: textSub,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
           // 顶部卡片入口
           Container(
             margin: const EdgeInsets.only(top: 8),
@@ -250,6 +219,8 @@ class _ContactsListItem extends StatelessWidget {
                     fontSize: 17,
                     color: Color(0xFF1D2129),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
