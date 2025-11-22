@@ -1,0 +1,347 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+class ChatOptionsPage extends StatelessWidget {
+  const ChatOptionsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFEDEDED),
+      body: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 480),
+          color: const Color(0xFFEDEDED),
+          child: Column(
+            children: const [
+              _ChatOptionsHeader(),
+              Expanded(child: _ChatOptionsBody()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatOptionsHeader extends StatelessWidget {
+  const _ChatOptionsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52,
+      color: const Color(0xFFEDEDED),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => Navigator.of(context).pop(),
+              icon: SvgPicture.asset(
+                'assets/icon/common/go-back.svg',
+                width: 12,
+                height: 20,
+              ),
+            ),
+          ),
+          const Expanded(
+            child: Center(
+              child: Text(
+                '聊天信息',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1D2129),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 36, height: 36),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatOptionsBody extends StatelessWidget {
+  const _ChatOptionsBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(top: 16),
+      children: const [
+        _MembersSection(),
+        SizedBox(height: 12),
+        _InfoListCard(items: [
+          _InfoListItemData(title: '查找聊天记录'),
+        ]),
+        SizedBox(height: 12),
+        _SwitchCard(),
+        SizedBox(height: 12),
+        _InfoListCard(items: [
+          _InfoListItemData(title: '设置当前聊天背景'),
+        ]),
+        SizedBox(height: 12),
+        _InfoListCard(items: [
+          _InfoListItemData(title: '清空聊天记录'),
+        ]),
+        SizedBox(height: 12),
+        _InfoListCard(items: [
+          _InfoListItemData(title: '投诉'),
+        ]),
+        SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _MembersSection extends StatelessWidget {
+  const _MembersSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/me.png',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'ZION.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF999999),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                side: const BorderSide(color: Color(0xFFD1D1D6), width: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                backgroundColor: Colors.transparent,
+              ),
+              onPressed: () {},
+              child: SvgPicture.asset(
+                'assets/icon/common/plus.svg',
+                width: 32,
+                height: 32,
+                colorFilter: const ColorFilter.mode(
+                  Color(0x66000000),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoListItemData {
+  const _InfoListItemData({
+    required this.title,
+  });
+
+  final String title;
+}
+
+class _InfoListCard extends StatelessWidget {
+  const _InfoListCard({
+    required this.items,
+  });
+
+  final List<_InfoListItemData> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          for (int i = 0; i < items.length; i++)
+            Column(
+              children: [
+                _InfoListItem(title: items[i].title),
+                if (i != items.length - 1)
+                  const Divider(
+                    height: 0,
+                    indent: 16,
+                    color: Color(0x14000000),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoListItem extends StatelessWidget {
+  const _InfoListItem({
+    required this.title,
+  });
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {},
+      child: SizedBox(
+        height: 56,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  color: Color(0xFF000000),
+                ),
+              ),
+              SvgPicture.asset(
+                'assets/icon/common/arrow-right.svg',
+                width: 14,
+                height: 14,
+                colorFilter: const ColorFilter.mode(
+                  Colors.black26,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SwitchCard extends StatelessWidget {
+  const _SwitchCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: const [
+          _SwitchItem(title: '消息免打扰', initialOn: false),
+          Divider(height: 0, indent: 16, color: Color(0x14000000)),
+          _SwitchItem(title: '置顶聊天', initialOn: true),
+          Divider(height: 0, indent: 16, color: Color(0x14000000)),
+          _SwitchItem(title: '消息提醒', initialOn: false),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwitchItem extends StatefulWidget {
+  const _SwitchItem({
+    required this.title,
+    required this.initialOn,
+  });
+
+  final String title;
+  final bool initialOn;
+
+  @override
+  State<_SwitchItem> createState() => _SwitchItemState();
+}
+
+class _SwitchItemState extends State<_SwitchItem> {
+  late bool _on;
+
+  @override
+  void initState() {
+    super.initState();
+    _on = widget.initialOn;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(
+                fontSize: 17,
+                color: Color(0xFF000000),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _on = !_on;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 51,
+                height: 31,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15.5),
+                  color: _on ? const Color(0xFF34C759) : const Color(0xFFE5E5EA),
+                ),
+                child: Align(
+                  alignment: _on ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Container(
+                      width: 27,
+                      height: 27,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(13.5),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            offset: Offset(0, 2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
