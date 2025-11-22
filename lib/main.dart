@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:zichat/pages/chats_page.dart';
 import 'package:zichat/pages/contacts_page.dart';
 import 'package:zichat/pages/discover_page.dart';
@@ -8,7 +9,10 @@ import 'package:zichat/pages/add_contacts_page.dart';
 import 'package:zichat/pages/code_scanner_page.dart';
 import 'package:zichat/pages/money_qrcode_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('chat_messages');
   runApp(const MyApp());
 }
 
@@ -185,25 +189,29 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: Colors.white,
-          child: Column(
-            children: [
-              _HomeHeader(currentIndex: _currentIndex),
-              Expanded(
-                child: _buildBody(),
-              ),
-              _HomeTabBar(
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-              ),
-            ],
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: Colors.white,
+            child: Column(
+              children: [
+                _HomeHeader(currentIndex: _currentIndex),
+                Expanded(
+                  child: _buildBody(),
+                ),
+                _HomeTabBar(
+                  currentIndex: _currentIndex,
+                  onTap: (index) {
+                    setState(() {
+                      _currentIndex = index;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

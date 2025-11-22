@@ -1,9 +1,12 @@
-﻿import 'dart:math';
+﻿import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:zichat/pages/chat_options_page.dart';
 import 'package:zichat/pages/transfer_page.dart';
 import 'package:zichat/pages/transfer_receive_page.dart';
+import 'package:zichat/storage/chat_storage.dart';
 
 // 消息数据模型
 class _ChatMessage {
@@ -32,6 +35,38 @@ class _ChatMessage {
   final String? amount;
   final String? status;
   final String? note;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'type': type,
+      'direction': direction,
+      'name': name,
+      'text': text,
+      'avatar': avatar,
+      'image': image,
+      'duration': duration,
+      'amount': amount,
+      'status': status,
+      'note': note,
+    };
+  }
+
+  factory _ChatMessage.fromMap(Map<String, dynamic> map) {
+    return _ChatMessage(
+      id: map['id'] as String,
+      type: map['type'] as String,
+      direction: map['direction'] as String?,
+      name: map['name'] as String?,
+      text: map['text'] as String?,
+      avatar: map['avatar'] as String?,
+      image: map['image'] as String?,
+      duration: map['duration'] as String?,
+      amount: map['amount'] as String?,
+      status: map['status'] as String?,
+      note: map['note'] as String?,
+    );
+  }
 }
 
 // 模拟消息数据
@@ -111,7 +146,16 @@ final List<_ChatMessage> _mockMessages = [
 ];
 
 class ChatDetailPage extends StatefulWidget {
-  const ChatDetailPage({super.key});
+  const ChatDetailPage({
+    super.key,
+    required this.chatId,
+    required this.title,
+    required this.unread,
+  });
+
+  final String chatId;
+  final String title;
+  final int unread;
 
   @override
   State<ChatDetailPage> createState() => _ChatDetailPageState();
@@ -124,7 +168,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   bool _voiceMode = false;
   bool _showEmoji = false;
   bool _showFn = false;
-  final List<_ChatMessage> _messages = List.from(_mockMessages);
+  List<_ChatMessage> _messages = [];
   final List<String> _recentEmojis = [];
 
   @override
@@ -134,6 +178,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       // 监听输入变化，用于切换“发送”按钮与“+”按钮
       setState(() {});
     });
+    _loadMessages();
   }
 
   @override
@@ -155,6 +200,25 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
   }
 
+  Future<void> _loadMessages() async {
+    final List<Map<String, dynamic>> stored =
+        await ChatStorage.loadMessages(widget.chatId);
+    setState(() {
+      if (stored.isEmpty && widget.chatId == 'c1') {
+        // 首次进入第一个会话时，用内置的模拟消息做示例
+        _messages = List<_ChatMessage>.from(_mockMessages);
+      } else {
+        _messages = stored.map(_ChatMessage.fromMap).toList();
+      }
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _saveMessages() async {
+    final list = _messages.map((m) => m.toMap()).toList();
+    await ChatStorage.saveMessages(widget.chatId, list);
+  }
+
   void _toggleVoice() {
     setState(() {
       _voiceMode = !_voiceMode;
@@ -164,6 +228,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   void _toggleEmoji() {
+    FocusScope.of(context).unfocus();
     setState(() {
       _showEmoji = !_showEmoji;
       _showFn = false;
@@ -218,6 +283,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   void _toggleFn() {
+    FocusScope.of(context).unfocus();
     setState(() {
       _showFn = !_showFn;
       _showEmoji = false;
@@ -249,6 +315,32 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       );
       _inputController.clear();
     });
+    _saveMessages();
+    _scrollToBottom();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? file = await picker.pickImage(
+      source: source,
+      maxWidth: 1080,
+      imageQuality: 85,
+    );
+    if (file == null) return;
+
+    setState(() {
+      _messages.add(
+        _ChatMessage(
+          id: 'img-${DateTime.now().millisecondsSinceEpoch}',
+          type: 'image',
+          direction: 'out',
+          avatar: 'assets/avatar.png',
+          image: file.path,
+        ),
+      );
+      _showFn = false;
+    });
+    _saveMessages();
     _scrollToBottom();
   }
 
@@ -256,20 +348,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     // 根据功能类型执行不同操作，目前先实现图片发送
     switch (item.label) {
       case '相册':
+        _pickImage(ImageSource.gallery);
+        break;
       case '拍摄':
-        setState(() {
-          _messages.add(
-            _ChatMessage(
-              id: 'img-${DateTime.now().millisecondsSinceEpoch}',
-              type: 'image',
-              direction: 'out',
-              avatar: 'assets/avatar.png',
-              image: 'assets/add-contacts-bg.jpeg',
-            ),
-          );
-          _showFn = false;
-        });
-        _scrollToBottom();
+        _pickImage(ImageSource.camera);
         break;
       case '转账':
         setState(() {
@@ -294,6 +376,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               ),
             );
           });
+          _saveMessages();
           _scrollToBottom();
         });
         break;
@@ -307,67 +390,71 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEDEDED),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: const Color(0xFFEDEDED),
-          child: Column(
-            children: [
-              _Header(
-                title: 'Liam',
-                unread: 12,
-                onBack: () => Navigator.of(context).pop(),
-                onMore: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ChatOptionsPage(),
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: const Color(0xFFEDEDED),
+            child: Column(
+              children: [
+                _Header(
+                  title: widget.title,
+                  unread: widget.unread,
+                  onBack: () => Navigator.of(context).pop(),
+                  onMore: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ChatOptionsPage(),
+                      ),
+                    );
+                  },
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _closePanels,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      itemCount: _messages.length,
+                      itemBuilder: (_, index) => _MessageItem(message: _messages[index]),
                     ),
-                  );
-                },
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: _closePanels,
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                ),
+                _Toolbar(
+                  controller: _inputController,
+                  voiceMode: _voiceMode,
+                  showEmoji: _showEmoji,
+                  showFn: _showFn,
+                  hasText: _hasText,
+                  onVoiceToggle: _toggleVoice,
+                  onEmojiToggle: _toggleEmoji,
+                  onFnToggle: _toggleFn,
+                  onSend: _send,
+                  onFocus: _closePanels,
+                ),
+                if (_showEmoji)
+                  SizedBox(
+                    height: 280,
+                    child: _EmojiPanel(
+                      recentEmojis: _recentEmojis,
+                      onEmojiTap: _handleEmojiTap,
+                      onEmojiDelete: _handleEmojiDelete,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    itemCount: _messages.length,
-                    itemBuilder: (_, index) => _MessageItem(message: _messages[index]),
                   ),
-                ),
-              ),
-              _Toolbar(
-                controller: _inputController,
-                voiceMode: _voiceMode,
-                showEmoji: _showEmoji,
-                showFn: _showFn,
-                hasText: _hasText,
-                onVoiceToggle: _toggleVoice,
-                onEmojiToggle: _toggleEmoji,
-                onFnToggle: _toggleFn,
-                onSend: _send,
-                onFocus: _closePanels,
-              ),
-              if (_showEmoji)
-                SizedBox(
-                  height: 280,
-                  child: _EmojiPanel(
-                    recentEmojis: _recentEmojis,
-                    onEmojiTap: _handleEmojiTap,
-                    onEmojiDelete: _handleEmojiDelete,
+                if (_showFn)
+                  SizedBox(
+                    height: 220,
+                    child: _FnPanel(
+                      onItemTap: _handleFnTap,
+                    ),
                   ),
-                ),
-              if (_showFn)
-                SizedBox(
-                  height: 220,
-                  child: _FnPanel(
-                    onItemTap: _handleFnTap,
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -637,13 +724,24 @@ class _ImageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: Image.asset(
+    Widget child;
+    if (imageAsset.startsWith('assets/')) {
+      child = Image.asset(
         imageAsset,
         width: 240,
         fit: BoxFit.cover,
-      ),
+      );
+    } else {
+      child = Image.file(
+        File(imageAsset),
+        width: 240,
+        fit: BoxFit.cover,
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: child,
     );
   }
 }

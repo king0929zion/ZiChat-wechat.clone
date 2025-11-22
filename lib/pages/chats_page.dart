@@ -37,7 +37,11 @@ class ChatsPage extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (ctx) => const ChatDetailPage(),
+                    builder: (ctx) => ChatDetailPage(
+                      chatId: chat.id,
+                      title: chat.title,
+                      unread: chat.unread,
+                    ),
                   ),
                 );
               },

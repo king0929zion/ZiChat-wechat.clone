@@ -45,16 +45,20 @@ class _MomentsPageState extends State<MomentsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 480),
-          color: Colors.white,
-          child: Stack(
-            children: [
-              _buildScrollContent(),
-              _buildHeader(context),
-              _buildCommentBar(context),
-            ],
+      body: SafeArea(
+        top: true,
+        bottom: true,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            color: Colors.white,
+            child: Stack(
+              children: [
+                _buildScrollContent(),
+                _buildHeader(context),
+                _buildCommentBar(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -600,7 +604,7 @@ class _MomentContent extends StatelessWidget {
           ),
         ),
         if (post.images.isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
           _MomentImages(images: post.images),
         ],
         const SizedBox(height: 10),
