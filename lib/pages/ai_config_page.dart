@@ -315,9 +315,7 @@ class _AiConfigPageState extends State<AiConfigPage> {
               maxLines: null,
               expands: true,
               decoration: InputDecoration(
-                hintText: '例如：
-- 你是一个熟悉产品和代码的朋友
-- 说话口语化、直接一点、别太官方',
+                hintText: '例如：\n- 你是一个熟悉产品和代码的朋友\n- 说话口语化、直接一点、别太官方',
                 hintStyle: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFFB8C0CC),

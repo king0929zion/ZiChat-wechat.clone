@@ -152,9 +152,7 @@ class _AiContactPromptPageState extends State<AiContactPromptPage> {
               maxLines: null,
               expands: true,
               decoration: InputDecoration(
-                hintText: '例如：
-- 把对方当成老朋友聊天
-- 多问一些问题，少讲大道理',
+                hintText: '例如：\n- 把对方当成老朋友聊天\n- 多问一些问题，少讲大道理',
                 hintStyle: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFFB8C0CC),
