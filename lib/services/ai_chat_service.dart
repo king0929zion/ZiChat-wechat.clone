@@ -22,6 +22,7 @@ class AiChatService {
   static Future<List<String>> sendChat({
     required String chatId,
     required String userInput,
+    List<Map<String, String>>? history,
   }) async {
     final config = await AiConfigStorage.loadGlobalConfig();
     if (config == null ||
@@ -55,6 +56,7 @@ class AiChatService {
         model: config.model.trim(),
         systemPrompt: systemPrompt,
         userInput: userInput,
+        history: history,
       );
     } else {
       raw = await _callOpenAiCompatible(
@@ -63,6 +65,7 @@ class AiChatService {
         model: config.model.trim(),
         systemPrompt: systemPrompt,
         userInput: userInput,
+        history: history,
       );
     }
 
@@ -92,21 +95,39 @@ class AiChatService {
     required String model,
     required String systemPrompt,
     required String userInput,
+    List<Map<String, String>>? history,
   }) async {
     final uri = _joinUri(baseUrl, 'v1/chat/completions');
+
+    final List<Map<String, String>> messages = <Map<String, String>>[];
+
+    if (systemPrompt.isNotEmpty) {
+      messages.add(<String, String>{
+        'role': 'system',
+        'content': systemPrompt,
+      });
+    }
+
+    if (history != null) {
+      for (final Map<String, String> item in history) {
+        final String content = (item['content'] ?? '').trim();
+        if (content.isEmpty) continue;
+        final String role = item['role'] ?? 'user';
+        messages.add(<String, String>{
+          'role': role,
+          'content': content,
+        });
+      }
+    }
+
+    messages.add(<String, String>{
+      'role': 'user',
+      'content': userInput,
+    });
+
     final body = <String, dynamic>{
       'model': model,
-      'messages': [
-        if (systemPrompt.isNotEmpty)
-          {
-            'role': 'system',
-            'content': systemPrompt,
-          },
-        {
-          'role': 'user',
-          'content': userInput,
-        },
-      ],
+      'messages': messages,
       'temperature': 0.7,
     };
 
@@ -145,6 +166,7 @@ class AiChatService {
     required String model,
     required String systemPrompt,
     required String userInput,
+    List<Map<String, String>>? history,
   }) async {
     final String cleanedBase =
         baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
@@ -152,9 +174,24 @@ class AiChatService {
       '$cleanedBase/v1beta/models/$model:generateContent?key=$apiKey',
     );
 
-    final String promptText = systemPrompt.isNotEmpty
-        ? '$systemPrompt\n\n$userInput'
-        : userInput;
+    final StringBuffer buffer = StringBuffer();
+    if (systemPrompt.isNotEmpty) {
+      buffer.writeln(systemPrompt.trim());
+      buffer.writeln();
+    }
+
+    if (history != null) {
+      for (final Map<String, String> item in history) {
+        final String content = (item['content'] ?? '').trim();
+        if (content.isEmpty) continue;
+        final String role = item['role'] ?? 'user';
+        final String prefix = role == 'assistant' ? '朋友：' : '我：';
+        buffer.writeln('$prefix$content');
+      }
+    }
+
+    buffer.writeln('我：$userInput');
+    final String promptText = buffer.toString().trim();
 
     final body = <String, dynamic>{
       'contents': [

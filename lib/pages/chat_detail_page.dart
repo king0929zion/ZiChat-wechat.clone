@@ -70,82 +70,6 @@ class _ChatMessage {
   }
 }
 
-// 模拟消息数据
-final List<_ChatMessage> _mockMessages = [
-  const _ChatMessage(id: 't1', type: 'timestamp', text: '今天 09:20'),
-  const _ChatMessage(
-    id: 'm1',
-    type: 'text',
-    direction: 'in',
-    name: 'Liam',
-    avatar: 'assets/me.png',
-    text: '新需求这周能联调吗？我准备把埋点整理一版。',
-  ),
-  const _ChatMessage(
-    id: 'm2',
-    type: 'text',
-    direction: 'out',
-    avatar: 'assets/avatar.png',
-    text: '已经提测了,晚上前给你最新构建。',
-  ),
-  const _ChatMessage(
-    id: 'm3a',
-    type: 'image',
-    direction: 'in',
-    avatar: 'assets/me.png',
-    image: 'assets/add-contacts-bg.jpeg',
-  ),
-  const _ChatMessage(
-    id: 'm3b',
-    type: 'image',
-    direction: 'in',
-    avatar: 'assets/me.png',
-    image: 'assets/cn-service-up.jpg',
-  ),
-  const _ChatMessage(
-    id: 'm4',
-    type: 'voice',
-    direction: 'out',
-    avatar: 'assets/avatar.png',
-    duration: '12"',
-  ),
-  const _ChatMessage(
-    id: 'm5',
-    type: 'red-packet',
-    direction: 'in',
-    avatar: 'assets/me.png',
-    text: '恭喜发财，大吉大利',
-    note: '产品红包',
-    status: '微信红包',
-  ),
-  const _ChatMessage(
-    id: 'm6',
-    type: 'transfer',
-    direction: 'out',
-    avatar: 'assets/avatar.png',
-    amount: '520.00',
-    note: '新版动效',
-    status: '待对方确认',
-  ),
-  const _ChatMessage(id: 't2', type: 'timestamp', text: '昨天 23:18'),
-  const _ChatMessage(id: 'm7', type: 'recall', text: '你撤回了一条消息'),
-  const _ChatMessage(
-    id: 'm9',
-    type: 'text',
-    direction: 'in',
-    name: 'Liam',
-    avatar: 'assets/me.png',
-    text: '收到，合并完再 ping 你。',
-  ),
-  const _ChatMessage(
-    id: 'm10',
-    type: 'text',
-    direction: 'out',
-    avatar: 'assets/avatar.png',
-    text: '辛苦啦～',
-  ),
-];
-
 class ChatDetailPage extends StatefulWidget {
   const ChatDetailPage({
     super.key,
@@ -200,16 +124,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Future<void> _loadMessages() async {
-    final bool hasStored = ChatStorage.hasMessages(widget.chatId);
     final List<Map<String, dynamic>> stored =
         await ChatStorage.loadMessages(widget.chatId);
     setState(() {
-      if (!hasStored && stored.isEmpty && widget.chatId == 'c1') {
-        // 首次进入第一个会话时，用内置的模拟消息做示例
-        _messages = List<_ChatMessage>.from(_mockMessages);
-      } else {
-        _messages = stored.map(_ChatMessage.fromMap).toList();
-      }
+      _messages = stored.map(_ChatMessage.fromMap).toList();
     });
   }
 
@@ -318,8 +236,39 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     _scrollToBottom();
   }
 
+  List<Map<String, String>> _buildAiHistory() {
+    final List<_ChatMessage> textMessages = _messages
+        .where(
+          (m) => m.type == 'text' && (m.text?.trim().isNotEmpty ?? false),
+        )
+        .toList();
+    if (textMessages.length <= 1) {
+      return <Map<String, String>>[];
+    }
+
+    const int maxHistory = 10;
+    final List<_ChatMessage> historyMessages =
+        textMessages.sublist(0, textMessages.length - 1);
+    final int start = historyMessages.length > maxHistory
+        ? historyMessages.length - maxHistory
+        : 0;
+    final List<_ChatMessage> recent = historyMessages.sublist(start);
+
+    final List<Map<String, String>> history = <Map<String, String>>[];
+    for (final _ChatMessage m in recent) {
+      final String content = (m.text ?? '').trim();
+      if (content.isEmpty) continue;
+      final String role = m.direction == 'out' ? 'user' : 'assistant';
+      history.add(<String, String>{
+        'role': role,
+        'content': content,
+      });
+    }
+    return history;
+  }
+
   Future<void> _sendByAi() async {
-    final text = _inputController.text.trim();
+    final String text = _inputController.text.trim();
     if (text.isEmpty || _aiRequesting) return;
 
     _send();
@@ -328,10 +277,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       _aiRequesting = true;
     });
 
+    final List<Map<String, String>> history = _buildAiHistory();
+
     try {
       final List<String> replies = await AiChatService.sendChat(
         chatId: widget.chatId,
         userInput: text,
+        history: history,
       );
       if (!mounted) return;
       if (replies.isEmpty) {
