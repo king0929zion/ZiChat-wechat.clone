@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:zichat/pages/chat_options_page.dart';
 import 'package:zichat/pages/transfer_page.dart';
 import 'package:zichat/pages/transfer_receive_page.dart';
+import 'package:zichat/services/ai_chat_service.dart';
 import 'package:zichat/storage/chat_storage.dart';
 
 // 消息数据模型
@@ -168,6 +169,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   bool _voiceMode = false;
   bool _showEmoji = false;
   bool _showFn = false;
+  bool _aiRequesting = false;
   List<_ChatMessage> _messages = [];
   final List<String> _recentEmojis = [];
 
@@ -316,6 +318,64 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     _scrollToBottom();
   }
 
+  Future<void> _sendByAi() async {
+    final text = _inputController.text.trim();
+    if (text.isEmpty || _aiRequesting) return;
+
+    _send();
+
+    setState(() {
+      _aiRequesting = true;
+    });
+
+    try {
+      final List<String> replies = await AiChatService.sendChat(
+        chatId: widget.chatId,
+        userInput: text,
+      );
+      if (!mounted) return;
+      if (replies.isEmpty) {
+        setState(() {
+          _aiRequesting = false;
+        });
+        return;
+      }
+
+      setState(() {
+        for (int i = 0; i < replies.length; i++) {
+          _messages.add(
+            _ChatMessage(
+              id:
+                  'ai-${DateTime.now().millisecondsSinceEpoch.toString()}-$i',
+              type: 'text',
+              direction: 'in',
+              avatar: 'assets/me.png',
+              text: replies[i],
+            ),
+          );
+        }
+        _aiRequesting = false;
+      });
+
+      _saveMessages();
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          _ChatMessage(
+            id: 'sys-${DateTime.now().millisecondsSinceEpoch.toString()}',
+            type: 'system',
+            text: 'AI 出错：$e',
+          ),
+        );
+        _aiRequesting = false;
+      });
+      _saveMessages();
+      _scrollToBottom();
+    }
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     final XFile? file = await picker.pickImage(
@@ -441,6 +501,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                   onEmojiToggle: _toggleEmoji,
                   onFnToggle: _toggleFn,
                   onSend: _send,
+                  onSendByAi: _sendByAi,
                   onFocus: _closePanels,
                 ),
                 if (_showEmoji)
@@ -1091,6 +1152,7 @@ class _Toolbar extends StatelessWidget {
     required this.onEmojiToggle,
     required this.onFnToggle,
     required this.onSend,
+    required this.onSendByAi,
     required this.onFocus,
   });
 
@@ -1104,6 +1166,7 @@ class _Toolbar extends StatelessWidget {
   final VoidCallback onFnToggle;
   final VoidCallback onSend;
   final VoidCallback onFocus;
+  final VoidCallback onSendByAi;
 
   @override
   Widget build(BuildContext context) {
@@ -1152,6 +1215,7 @@ class _Toolbar extends StatelessWidget {
           if (hasText)
             GestureDetector(
               onTap: onSend,
+              onLongPress: onSendByAi,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(

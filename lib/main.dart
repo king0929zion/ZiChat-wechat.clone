@@ -13,6 +13,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Hive.openBox('chat_messages');
+  await Hive.openBox('ai_config');
   runApp(const MyApp());
 }
 

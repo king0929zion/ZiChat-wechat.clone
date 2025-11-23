@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zichat/pages/ai_contact_prompt_page.dart';
 import 'package:zichat/storage/chat_storage.dart';
 
 class ChatOptionsPage extends StatelessWidget {
@@ -22,6 +23,58 @@ class ChatOptionsPage extends StatelessWidget {
               children: [
                 const _ChatOptionsHeader(),
                 Expanded(child: _ChatOptionsBody(chatId: chatId)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AiPromptItem extends StatelessWidget {
+  const _AiPromptItem({required this.chatId});
+
+  final String chatId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => AiContactPromptPage(
+                chatId: chatId,
+                title: '当前聊天',
+              ),
+            ),
+          );
+        },
+        child: SizedBox(
+          height: 56,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'AI 提示词',
+                  style: TextStyle(
+                    fontSize: 17,
+                    color: Color(0xFF000000),
+                  ),
+                ),
+                SvgPicture.asset(
+                  'assets/icon/common/arrow-right.svg',
+                  width: 14,
+                  height: 14,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.black26,
+                    BlendMode.srcIn,
+                  ),
+                ),
               ],
             ),
           ),
@@ -161,6 +214,8 @@ class _ChatOptionsBody extends StatelessWidget {
         const _InfoListCard(items: [
           _InfoListItemData(title: '查找聊天记录'),
         ]),
+        const SizedBox(height: 12),
+        _AiPromptItem(chatId: chatId),
         const SizedBox(height: 12),
         const _SwitchCard(),
         const SizedBox(height: 12),

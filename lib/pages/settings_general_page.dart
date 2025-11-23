@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zichat/pages/ai_config_page.dart';
 
 class SettingsGeneralPage extends StatefulWidget {
   const SettingsGeneralPage({super.key});
@@ -125,6 +126,12 @@ class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
     _showSnack('功能开发中');
   }
 
+  void _openAiConfig() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AiConfigPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color bg = Color(0xFFEFEFF4);
@@ -186,6 +193,11 @@ class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
                         label: '存储空间',
                         right: const _ArrowOnly(),
                         onTap: _showFeatureDevToast,
+                      ),
+                      _SettingsRow(
+                        label: 'AI 配置',
+                        right: const _ArrowOnly(),
+                        onTap: _openAiConfig,
                       ),
                       _SettingsRow(
                         label: '发现页管理',
