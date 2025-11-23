@@ -29,7 +29,7 @@ jobs:
         run: flutter pub get
 
       - name: Generate app icon
-        run: flutter pub run flutter_launcher_icons:main
+        run: flutter pub run flutter_launcher_icons
 
       - name: Build release APK (arm64)
         run: flutter build apk --release --target-platform android-arm64
