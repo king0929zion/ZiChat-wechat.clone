@@ -4,12 +4,16 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
+import 'package:zichat/config/api_secrets.dart';
+import 'package:zichat/config/ai_models.dart';
 import 'package:zichat/services/ai_soul_engine.dart';
 import 'package:zichat/services/ai_tools_service.dart';
 import 'package:zichat/storage/ai_config_storage.dart';
+import 'package:zichat/storage/model_selection_storage.dart';
 
 /// 统一的 AI 对话服务
 /// 支持 OpenAI / Gemini 两种 provider
+/// 支持内置 API 和自定义 API
 /// 支持流式响应和智能上下文管理
 class AiChatService {
   static String _basePromptCache = '';
@@ -42,12 +46,33 @@ class AiChatService {
     required String chatId,
     required String userInput,
   }) async* {
-    final config = await AiConfigStorage.loadGlobalConfig();
-    if (config == null ||
-        config.apiBaseUrl.trim().isEmpty ||
-        config.apiKey.trim().isEmpty ||
-        config.model.trim().isEmpty) {
-      throw Exception('AI 配置不完整，请先在"我-设置-通用-AI 配置"中填写。');
+    // 检查是否使用内置 API
+    final useBuiltIn = await ModelSelectionStorage.getUseBuiltInApi();
+    
+    String apiBaseUrl;
+    String apiKey;
+    String model;
+    String persona = '';
+    
+    if (useBuiltIn && ApiSecrets.hasBuiltInChatApi) {
+      // 使用内置 API
+      apiBaseUrl = ApiSecrets.chatBaseUrl;
+      apiKey = ApiSecrets.chatApiKey;
+      final selectedModel = await ModelSelectionStorage.getChatModel();
+      model = selectedModel.id;
+    } else {
+      // 使用用户自定义 API
+      final config = await AiConfigStorage.loadGlobalConfig();
+      if (config == null ||
+          config.apiBaseUrl.trim().isEmpty ||
+          config.apiKey.trim().isEmpty ||
+          config.model.trim().isEmpty) {
+        throw Exception('AI 配置不完整，请先在"我-设置-通用-AI 配置"中填写。');
+      }
+      apiBaseUrl = config.apiBaseUrl.trim();
+      apiKey = config.apiKey.trim();
+      model = config.model.trim();
+      persona = config.persona;
     }
 
     // 模拟真人回复延迟 (800ms - 2000ms)
@@ -55,7 +80,7 @@ class AiChatService {
     await Future.delayed(Duration(milliseconds: initialDelay));
 
     // 构建系统提示词
-    final systemPrompt = await _buildSystemPrompt(chatId, config.persona);
+    final systemPrompt = await _buildSystemPrompt(chatId, persona);
     
     // 获取智能上下文历史
     final history = _getSmartHistory(chatId, userInput);
@@ -69,41 +94,23 @@ class AiChatService {
     // 随机触发生活事件
     AiSoulEngine.triggerRandomEvent();
 
-    if (config.provider == 'gemini') {
-      // Gemini 暂不支持流式，使用普通请求后模拟流式输出
-      final result = await _callGemini(
-        baseUrl: config.apiBaseUrl.trim(),
-        apiKey: config.apiKey.trim(),
-        model: config.model.trim(),
-        systemPrompt: systemPrompt,
-        userInput: userInput,
-        history: history,
-      );
-      
-      // 模拟流式输出
-      yield* _simulateStream(result);
-      
-      // 记录 AI 回复到历史
-      _addToHistory(chatId, 'assistant', result);
-    } else {
-      // OpenAI 真正的流式输出
-      final buffer = StringBuffer();
-      
-      await for (final chunk in _callOpenAiStream(
-        baseUrl: config.apiBaseUrl.trim(),
-        apiKey: config.apiKey.trim(),
-        model: config.model.trim(),
-        systemPrompt: systemPrompt,
-        userInput: userInput,
-        history: history,
-      )) {
-        buffer.write(chunk);
-        yield chunk;
-      }
-      
-      // 记录 AI 回复到历史
-      _addToHistory(chatId, 'assistant', buffer.toString());
+    // 内置 API 都是 OpenAI 兼容格式，使用流式输出
+    final buffer = StringBuffer();
+    
+    await for (final chunk in _callOpenAiStream(
+      baseUrl: apiBaseUrl,
+      apiKey: apiKey,
+      model: model,
+      systemPrompt: systemPrompt,
+      userInput: userInput,
+      history: history,
+    )) {
+      buffer.write(chunk);
+      yield chunk;
     }
+    
+    // 记录 AI 回复到历史
+    _addToHistory(chatId, 'assistant', buffer.toString());
   }
 
   /// 普通发送 (兼容旧接口)

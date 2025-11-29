@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+import 'package:zichat/services/image_gen_service.dart';
 
 /// AI 工具服务 - 让 AI 可以调用各种工具
 /// 
 /// 支持的工具：
 /// - 发送图片（分享生活）
+/// - AI 生成图片
 /// - 发起转账
 /// - 发送表情
 /// - 发送语音（模拟）
@@ -33,6 +35,18 @@ class AiToolsService {
   /// 返回工具调用列表，如果没有工具调用则返回空列表
   static List<AiToolCall> parseToolCalls(String response) {
     final calls = <AiToolCall>[];
+    
+    // 检测 AI 生图指令：[生成图片:xxx] 或 [画:xxx]
+    final genImagePattern = RegExp(r'\[(?:生成图片|画|绘制)[：:]\s*([^\]]+)\]');
+    for (final match in genImagePattern.allMatches(response)) {
+      final prompt = match.group(1) ?? '';
+      if (prompt.isNotEmpty && ImageGenService.isAvailable) {
+        calls.add(AiToolCall(
+          type: AiToolType.generateImage,
+          params: {'prompt': prompt},
+        ));
+      }
+    }
     
     // 检测图片分享指令：[图片:xxx] 或 [发图:xxx]
     final imagePattern = RegExp(r'\[(?:图片|发图|分享图片)[：:]\s*([^\]]+)\]');
@@ -72,6 +86,7 @@ class AiToolsService {
   /// 移除回复中的工具调用标记
   static String removeToolMarkers(String response) {
     return response
+        .replaceAll(RegExp(r'\[(?:生成图片|画|绘制)[：:][^\]]*\]'), '')
         .replaceAll(RegExp(r'\[(?:图片|发图|分享图片)[：:][^\]]*\]'), '')
         .replaceAll(RegExp(r'\[(?:转账|发红包)[：:][^\]]*\]'), '')
         .replaceAll(RegExp(r'\[表情[：:][^\]]*\]'), '')
@@ -121,18 +136,28 @@ class AiToolsService {
   
   /// 生成工具使用的系统提示
   static String generateToolPrompt() {
-    return '''
-
-【你可以使用的工具】
-当你想分享图片、发红包时，可以在回复中使用以下格式：
-- 分享图片：[图片:描述内容]，例如：[图片:刚买的奶茶]
-- 发红包/转账：[转账:金额]，例如：[转账:1.88]
-- 发表情：[表情:表情描述]，例如：[表情:开心]
-
-注意：
-- 不要滥用工具，只在合适的时候使用
-- 发红包只在特殊场合（生日、庆祝等）
-- 分享图片要自然，像朋友分享生活一样''';
+    final hasImageGen = ImageGenService.isAvailable;
+    
+    final buffer = StringBuffer();
+    buffer.writeln();
+    buffer.writeln('【你可以使用的工具】');
+    buffer.writeln('当你想分享图片、发红包时，可以在回复中使用以下格式：');
+    buffer.writeln('- 分享图片：[图片:描述内容]，例如：[图片:刚买的奶茶]');
+    if (hasImageGen) {
+      buffer.writeln('- AI生成图片：[生成图片:详细描述]，例如：[生成图片:一只可爱的橘猫在阳光下睡觉]');
+    }
+    buffer.writeln('- 发红包/转账：[转账:金额]，例如：[转账:1.88]');
+    buffer.writeln('- 发表情：[表情:表情描述]，例如：[表情:开心]');
+    buffer.writeln();
+    buffer.writeln('注意：');
+    buffer.writeln('- 不要滥用工具，只在合适的时候使用');
+    buffer.writeln('- 发红包只在特殊场合（生日、庆祝等）');
+    buffer.writeln('- 分享图片要自然，像朋友分享生活一样');
+    if (hasImageGen) {
+      buffer.writeln('- AI生成图片用于创意场景，描述要详细具体');
+    }
+    
+    return buffer.toString();
   }
 }
 
@@ -146,10 +171,11 @@ class AiToolCall {
 
 /// 工具类型
 enum AiToolType {
-  sendImage,
-  sendTransfer,
-  sendEmoji,
-  sendVoice,
+  sendImage,      // 发送预设图片
+  generateImage,  // AI 生成图片
+  sendTransfer,   // 发送转账
+  sendEmoji,      // 发送表情
+  sendVoice,      // 发送语音（暂未实现）
 }
 
 /// 分享图片场景

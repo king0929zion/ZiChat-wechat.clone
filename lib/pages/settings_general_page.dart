@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/pages/ai_config_page.dart';
+import 'package:zichat/pages/settings_model_page.dart';
 
 class SettingsGeneralPage extends StatefulWidget {
   const SettingsGeneralPage({super.key});
@@ -132,6 +133,12 @@ class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
     );
   }
 
+  void _openModelSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SettingsModelPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color bg = Color(0xFFEFEFF4);
@@ -195,7 +202,12 @@ class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
                         onTap: _showFeatureDevToast,
                       ),
                       _SettingsRow(
-                        label: 'AI 配置',
+                        label: 'AI 模型选择',
+                        right: const _ArrowOnly(),
+                        onTap: _openModelSettings,
+                      ),
+                      _SettingsRow(
+                        label: 'AI 配置（自定义）',
                         right: const _ArrowOnly(),
                         onTap: _openAiConfig,
                       ),

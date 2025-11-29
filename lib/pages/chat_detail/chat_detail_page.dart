@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
 import 'package:zichat/models/chat_message.dart';
@@ -9,6 +12,7 @@ import 'package:zichat/pages/chat_options_page.dart';
 import 'package:zichat/pages/transfer_page.dart';
 import 'package:zichat/services/ai_chat_service.dart';
 import 'package:zichat/services/ai_tools_service.dart';
+import 'package:zichat/services/image_gen_service.dart';
 import 'package:zichat/storage/chat_storage.dart';
 import 'widgets/widgets.dart';
 
@@ -409,6 +413,51 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           }
           break;
           
+        case AiToolType.generateImage:
+          // AI 生成图片
+          final prompt = call.params['prompt'] as String? ?? '';
+          if (prompt.isNotEmpty) {
+            // 显示生成中提示
+            final genMsgId = '$baseId-gen-$toolIndex';
+            setState(() {
+              _messages.add(ChatMessage.system(
+                id: genMsgId,
+                text: '正在生成图片...',
+              ));
+            });
+            _scrollToBottom();
+            
+            try {
+              final base64Image = await ImageGenService.generateImage(prompt: prompt);
+              if (base64Image != null && mounted) {
+                // 保存图片到本地
+                final imagePath = await _saveBase64Image(base64Image, genMsgId);
+                
+                setState(() {
+                  // 移除生成中提示
+                  _messages.removeWhere((m) => m.id == genMsgId);
+                  // 添加图片消息
+                  _messages.add(ChatMessage.image(
+                    id: '$baseId-tool-$toolIndex',
+                    imagePath: imagePath,
+                    isOutgoing: false,
+                  ));
+                });
+              }
+            } catch (e) {
+              if (mounted) {
+                setState(() {
+                  _messages.removeWhere((m) => m.id == genMsgId);
+                  _messages.add(ChatMessage.system(
+                    id: '$baseId-tool-$toolIndex',
+                    text: '图片生成失败: $e',
+                  ));
+                });
+              }
+            }
+          }
+          break;
+          
         case AiToolType.sendVoice:
           // 发送语音（未实现）
           break;
@@ -417,6 +466,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       toolIndex++;
       _scrollToBottom();
     }
+  }
+  
+  /// 保存 base64 图片到本地文件
+  Future<String> _saveBase64Image(String base64Data, String id) async {
+    final bytes = base64Decode(base64Data);
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/generated_$id.png');
+    await file.writeAsBytes(bytes);
+    return file.path;
   }
   
   /// 根据描述获取对应的图片资源
