@@ -1,185 +1,291 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:zichat/pages/chat_detail_page.dart';
+import 'package:zichat/constants/app_colors.dart';
+import 'package:zichat/constants/app_styles.dart';
+import 'package:zichat/pages/chat_detail/chat_detail_page.dart';
 
 class ChatsPage extends StatelessWidget {
   const ChatsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const borderColor = Color(0xFFE5E6EB);
-    const nameStyle = TextStyle(
-      fontSize: 17,
-      fontWeight: FontWeight.w500,
-      color: Color(0xFF1D2129),
-    );
-    const messageStyle = TextStyle(
-      fontSize: 14,
-      color: Color(0xFF86909C),
-    );
-    const timeStyle = TextStyle(
-      fontSize: 12,
-      color: Color(0xFF86909C),
-    );
-
     return Container(
-      color: Colors.white,
+      color: AppColors.surface,
       child: ListView.builder(
         padding: EdgeInsets.zero,
+        physics: const BouncingScrollPhysics(),
         itemCount: _mockChats.length,
         itemBuilder: (context, index) {
           final chat = _mockChats[index];
           final bool isLast = index == _mockChats.length - 1;
 
-          return Material(
-            color: Colors.white,
-            child: InkWell(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (ctx) => ChatDetailPage(
-                      chatId: chat.id,
-                      title: chat.title,
-                      unread: chat.unread,
+          return _ChatListItem(
+            chat: chat,
+            isLast: isLast,
+            index: index,
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// 聊天列表项组件
+class _ChatListItem extends StatefulWidget {
+  const _ChatListItem({
+    required this.chat,
+    required this.isLast,
+    required this.index,
+  });
+
+  final _ChatItem chat;
+  final bool isLast;
+  final int index;
+
+  @override
+  State<_ChatListItem> createState() => _ChatListItemState();
+}
+
+class _ChatListItemState extends State<_ChatListItem>
+    with SingleTickerProviderStateMixin {
+  bool _isPressed = false;
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 300 + widget.index * 50),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.1, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return ChatDetailPage(
+            chatId: widget.chat.id,
+            title: widget.chat.title,
+            unread: widget.chat.unread,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: AppStyles.animationNormal,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: _handleTap,
+          child: AnimatedContainer(
+            duration: AppStyles.animationFast,
+            color: _isPressed ? AppColors.background : AppColors.surface,
+            child: SizedBox(
+              height: 72,
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 12),
+                    child: _ChatAvatar(
+                      avatar: widget.chat.avatar,
+                      unread: widget.chat.unread,
+                      online: widget.chat.online,
                     ),
                   ),
-                );
-              },
-              child: SizedBox(
-                height: 72,
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 12),
-                      child: SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.asset(
-                                chat.avatar,
-                                width: 48,
-                                height: 48,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            if (chat.unread > 0)
-                              Positioned(
-                                top: -6,
-                                right: -6,
-                                child: Container(
-                                  constraints: const BoxConstraints(
-                                    minWidth: 18,
-                                    minHeight: 18,
-                                  ),
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFfb6e77),
-                                    borderRadius: BorderRadius.circular(9),
-                                    border: Border.all(color: Colors.white),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '${chat.unread}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                  Expanded(
+                    child: Container(
+                      height: double.infinity,
+                      padding: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                        border: widget.isLast
+                            ? null
+                            : const Border(
+                                bottom: BorderSide(
+                                  color: AppColors.border,
+                                  width: 0.5,
                                 ),
                               ),
-                            if (chat.online)
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF23C343),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  widget.chat.title,
+                                  style: AppStyles.titleMedium,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                          ],
-                        ),
+                              const SizedBox(width: 8),
+                              Text(
+                                widget.chat.latestTime,
+                                style: AppStyles.caption,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  widget.chat.latestMessage,
+                                  style: AppStyles.bodySmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (widget.chat.muted)
+                                SvgPicture.asset(
+                                  'assets/icon/mute-ring.svg',
+                                  width: 16,
+                                  height: 16,
+                                  colorFilter: const ColorFilter.mode(
+                                    AppColors.textSecondary,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    Expanded(
-                      child: Container(
-                        height: double.infinity,
-                        padding: const EdgeInsets.only(right: 16),
-                        decoration: BoxDecoration(
-                          border: isLast
-                              ? null
-                              : const Border(
-                                  bottom: BorderSide(
-                                    color: borderColor,
-                                    width: 0.5,
-                                  ),
-                                ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    chat.title,
-                                    style: nameStyle,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  chat.latestTime,
-                                  style: timeStyle,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    chat.latestMessage,
-                                    style: messageStyle,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                if (chat.muted)
-                                  SvgPicture.asset(
-                                    'assets/icon/mute-ring.svg',
-                                    width: 16,
-                                    height: 16,
-                                    colorFilter: const ColorFilter.mode(
-                                      Color(0xFF86909C),
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 聊天头像组件
+class _ChatAvatar extends StatelessWidget {
+  const _ChatAvatar({
+    required this.avatar,
+    required this.unread,
+    required this.online,
+  });
+
+  final String avatar;
+  final int unread;
+  final bool online;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+            child: Image.asset(
+              avatar,
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+            ),
+          ),
+          if (unread > 0)
+            Positioned(
+              top: -6,
+              right: -6,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: AppStyles.animationNormal,
+                curve: Curves.elasticOut,
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: value,
+                    child: child,
+                  );
+                },
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.unreadBadge,
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: AppColors.surface, width: 1.5),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    unread > 99 ? '99+' : '$unread',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textWhite,
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          );
-        },
+          if (online)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: AppColors.online,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.surface,
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
