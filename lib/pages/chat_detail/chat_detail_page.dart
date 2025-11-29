@@ -554,61 +554,60 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                   onBack: _handleBack,
                   onMore: _handleMore,
                 ),
-                  // Message List
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _closePanels,
-                      child: _MessageList(
-                        scrollController: _scrollController,
-                        messages: _messages,
-                        isAiRequesting: _aiRequesting,
-                      ),
+                // Message List
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _closePanels,
+                    child: _MessageList(
+                      scrollController: _scrollController,
+                      messages: _messages,
+                      isAiRequesting: _aiRequesting,
                     ),
                   ),
-                  // Toolbar
-                  ChatToolbar(
-                    controller: _inputController,
-                    voiceMode: _voiceMode,
-                    showEmoji: _showEmoji,
-                    showFn: _showFn,
-                    hasText: _hasText,
-                    onVoiceToggle: _toggleVoice,
-                    onEmojiToggle: _toggleEmoji,
-                    onFnToggle: _toggleFn,
-                    onSend: _send,
-                    onSendByAi: _sendByAi,
-                    onFocus: _closePanels,
-                  ),
-                  // Emoji Panel
-                  AnimatedSize(
-                    duration: AppStyles.animationNormal,
-                    curve: Curves.easeOutCubic,
-                    child: _showEmoji
-                        ? SizedBox(
-                            height: 280,
-                            child: EmojiPanel(
-                              recentEmojis: _recentEmojis,
-                              onEmojiTap: _handleEmojiTap,
-                              onEmojiDelete: _handleEmojiDelete,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  // Function Panel
-                  AnimatedSize(
-                    duration: AppStyles.animationNormal,
-                    curve: Curves.easeOutCubic,
-                    child: _showFn
-                        ? SizedBox(
-                            height: 220,
-                            child: FnPanel(
-                              onItemTap: _handleFnTap,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ),
+                ),
+                // Toolbar
+                ChatToolbar(
+                  controller: _inputController,
+                  voiceMode: _voiceMode,
+                  showEmoji: _showEmoji,
+                  showFn: _showFn,
+                  hasText: _hasText,
+                  onVoiceToggle: _toggleVoice,
+                  onEmojiToggle: _toggleEmoji,
+                  onFnToggle: _toggleFn,
+                  onSend: _send,
+                  onSendByAi: _sendByAi,
+                  onFocus: _closePanels,
+                ),
+                // Emoji Panel
+                AnimatedSize(
+                  duration: AppStyles.animationNormal,
+                  curve: Curves.easeOutCubic,
+                  child: _showEmoji
+                      ? SizedBox(
+                          height: 280,
+                          child: EmojiPanel(
+                            recentEmojis: _recentEmojis,
+                            onEmojiTap: _handleEmojiTap,
+                            onEmojiDelete: _handleEmojiDelete,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                // Function Panel
+                AnimatedSize(
+                  duration: AppStyles.animationNormal,
+                  curve: Curves.easeOutCubic,
+                  child: _showFn
+                      ? SizedBox(
+                          height: 220,
+                          child: FnPanel(
+                            onItemTap: _handleFnTap,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
           ),
         ),
