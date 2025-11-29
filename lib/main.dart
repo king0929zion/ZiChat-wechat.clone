@@ -18,11 +18,11 @@ import 'package:zichat/services/svg_precache_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 设置系统 UI 样式
+  // 设置系统 UI 样式（与页面背景一致）
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: AppColors.background,
+    systemNavigationBarColor: AppColors.surface,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
 
@@ -515,8 +515,16 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // 设置状态栏和导航栏颜色（与页面背景一致）
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: AppColors.surface,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         top: true,
         bottom: true,
