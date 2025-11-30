@@ -314,18 +314,64 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       // 流式完成后，解析工具调用和分句
       final fullText = buffer.toString();
       
-      // 过滤 thinking 标签内容
-      final filteredText = _removeThinkingContent(fullText);
+      // 调试：打印原始内容
+      debugPrint('AI raw response length: ${fullText.length}');
+      debugPrint('AI raw response: ${fullText.substring(0, fullText.length > 200 ? 200 : fullText.length)}...');
       
-      // 如果过滤后没有内容
-      if (filteredText.isEmpty) {
+      // 如果原始内容为空
+      if (fullText.isEmpty) {
         setState(() {
-          // 移除临时消息
           _messages.removeWhere((m) => m.id == aiMessageId);
           _messages.add(ChatMessage.system(
             id: 'sys-${DateTime.now().millisecondsSinceEpoch}',
-            text: 'AI 正在思考中，请稍后再试...',
+            text: '未收到 AI 回复，请检查网络或 API 配置',
           ));
+          _aiRequesting = false;
+        });
+        _saveMessages();
+        return;
+      }
+      
+      // 过滤 thinking 标签内容
+      final filteredText = _removeThinkingContent(fullText);
+      
+      debugPrint('AI filtered response length: ${filteredText.length}');
+      
+      // 如果过滤后没有内容，说明全是 thinking
+      if (filteredText.isEmpty) {
+        // 检查是否有 thinking 内容
+        final hasThinking = fullText.contains('<think') || 
+                           fullText.contains('<thinking') ||
+                           fullText.contains('【思考】');
+        
+        setState(() {
+          _messages.removeWhere((m) => m.id == aiMessageId);
+          if (hasThinking) {
+            // 有 thinking 内容但没有实际回复，直接显示原始内容（去掉标签）
+            final rawContent = fullText
+                .replaceAll(RegExp(r'</?think[^>]*>', caseSensitive: false), '')
+                .replaceAll(RegExp(r'</?thinking[^>]*>', caseSensitive: false), '')
+                .replaceAll('【思考】', '')
+                .replaceAll('【/思考】', '')
+                .trim();
+            if (rawContent.isNotEmpty) {
+              _messages.add(ChatMessage.text(
+                id: aiMessageId,
+                text: rawContent,
+                isOutgoing: false,
+              ));
+            } else {
+              _messages.add(ChatMessage.system(
+                id: 'sys-${DateTime.now().millisecondsSinceEpoch}',
+                text: 'AI 思考完成但未生成回复，请重试',
+              ));
+            }
+          } else {
+            _messages.add(ChatMessage.system(
+              id: 'sys-${DateTime.now().millisecondsSinceEpoch}',
+              text: '收到空回复，请重试',
+            ));
+          }
           _aiRequesting = false;
         });
         _saveMessages();
