@@ -363,9 +363,12 @@ class AiChatService {
       }
 
       String buffer = '';
+      int chunkCount = 0;
       
       await for (final chunk in response.stream.transform(utf8.decoder)) {
+        chunkCount++;
         buffer += chunk;
+        debugPrint('Stream chunk #$chunkCount received, length: ${chunk.length}');
         
         // 处理 SSE 格式
         while (buffer.contains('\n')) {
@@ -374,9 +377,14 @@ class AiChatService {
           buffer = buffer.substring(index + 1);
           
           if (line.isEmpty) continue;
+          
+          debugPrint('Processing line: ${line.substring(0, line.length > 100 ? 100 : line.length)}...');
+          
           if (line == 'data: [DONE]') {
+            debugPrint('Stream done, hasYielded: $hasYielded');
             // 如果到这里还没有输出内容，尝试解析非流式响应
             if (!hasYielded && buffer.isNotEmpty) {
+              debugPrint('Trying to parse remaining buffer as JSON');
               try {
                 final data = jsonDecode(buffer) as Map<String, dynamic>;
                 final content = _extractContent(data);
@@ -384,11 +392,14 @@ class AiChatService {
                   yield content;
                   hasYielded = true;
                 }
-              } catch (_) {}
+              } catch (e) {
+                debugPrint('JSON parse error: $e');
+              }
             }
             return;
           }
           if (!line.startsWith('data: ')) {
+            debugPrint('Non-SSE line, trying JSON parse');
             // 可能是非 SSE 格式的 JSON 响应
             try {
               final data = jsonDecode(line) as Map<String, dynamic>;
@@ -397,7 +408,9 @@ class AiChatService {
                 yield content;
                 hasYielded = true;
               }
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('Non-SSE JSON parse failed: $e');
+            }
             continue;
           }
           
@@ -425,15 +438,20 @@ class AiChatService {
                   hasYielded = true;
                 }
               }
+            } else {
+              debugPrint('No choices in response: $data');
             }
-          } catch (_) {
-            // 忽略解析错误，继续处理
+          } catch (e) {
+            debugPrint('SSE JSON parse error: $e, line: $jsonStr');
           }
         }
       }
       
+      debugPrint('Stream ended, total chunks: $chunkCount, hasYielded: $hasYielded');
+      
       // 处理剩余的 buffer（可能是完整的 JSON 响应）
       if (!hasYielded && buffer.trim().isNotEmpty) {
+        debugPrint('Processing remaining buffer: ${buffer.substring(0, buffer.length > 200 ? 200 : buffer.length)}');
         try {
           final data = jsonDecode(buffer.trim()) as Map<String, dynamic>;
           final content = _extractContent(data);
