@@ -209,24 +209,24 @@ class AiSoulEngine {
     final minutesSinceInteraction = now.difference(_lastInteraction).inMinutes;
     
     // 精力自然衰减
-    _energy = (_energy - 0.5).clamp(0, 100);
+    _energy = (_energy - 0.5).clamp(0.0, 100.0);
     
     // 心情趋于平静（向0靠拢）
     if (_mood > 0) {
-      _mood = (_mood - 0.3).clamp(0, 50);
+      _mood = (_mood - 0.3).clamp(0.0, 50.0);
     } else if (_mood < 0) {
-      _mood = (_mood + 0.3).clamp(-50, 0);
+      _mood = (_mood + 0.3).clamp(-50.0, 0.0);
     }
     
     // 长时间没互动会感到寂寞
     if (minutesSinceInteraction > 60) {
-      _mood = (_mood - 1).clamp(-50, 50);
+      _mood = (_mood - 1).clamp(-50.0, 50.0);
     }
     
     // 时间影响
     final timeAwareness = getTimeAwareness();
-    _energy = (_energy + timeAwareness.energyModifier * 0.1).clamp(0, 100);
-    _mood = (_mood + timeAwareness.moodModifier * 0.1).clamp(-50, 50);
+    _energy = (_energy + timeAwareness.energyModifier * 0.1).clamp(0.0, 100.0);
+    _mood = (_mood + timeAwareness.moodModifier * 0.1).clamp(-50.0, 50.0);
   }
   
   /// 用户消息触发状态更新
@@ -239,23 +239,23 @@ class AiSoulEngine {
     // 检查偏好触发
     preferences.forEach((key, value) {
       if (lowerMsg.contains(key)) {
-        _mood = (_mood + value * 2).clamp(-50, 50);
+        _mood = (_mood + value * 2).clamp(-50.0, 50.0);
       }
     });
     
     // 正面词汇
     if (_containsAny(lowerMsg, ['开心', '哈哈', '太棒', '喜欢', '爱你', '谢谢', '厉害'])) {
-      _mood = (_mood + 5).clamp(-50, 50);
-      _energy = (_energy + 3).clamp(0, 100);
+      _mood = (_mood + 5).clamp(-50.0, 50.0);
+      _energy = (_energy + 3).clamp(0.0, 100.0);
     }
     
     // 负面词汇
     if (_containsAny(lowerMsg, ['烦', '累', '难过', '讨厌', '无聊', '生气'])) {
-      _mood = (_mood - 3).clamp(-50, 50);
+      _mood = (_mood - 3).clamp(-50.0, 50.0);
     }
     
     // 互动恢复精力
-    _energy = (_energy + 2).clamp(0, 100);
+    _energy = (_energy + 2).clamp(0.0, 100.0);
     
     _saveState();
   }
@@ -289,9 +289,9 @@ class AiSoulEngine {
     _todayEvents.add(event);
     
     // 应用事件效果
-    _energy = (_energy + event.energyChange).clamp(0, 100);
-    _mood = (_mood + event.moodChange).clamp(-50, 50);
-    _stress = (_stress + event.stressChange).clamp(0, 100);
+    _energy = (_energy + event.energyChange).clamp(0.0, 100.0);
+    _mood = (_mood + event.moodChange).clamp(-50.0, 50.0);
+    _stress = (_stress + event.stressChange).clamp(0.0, 100.0);
     _currentActivity = event.activity;
     
     // 添加到短期记忆
@@ -445,8 +445,8 @@ class AiSoulEngine {
   }
   
   void updateIntimacy(String chatId, double delta) {
-    final current = _intimacyLevels[chatId] ?? 0;
-    _intimacyLevels[chatId] = (current + delta).clamp(0, 100);
+    final current = _intimacyLevels[chatId] ?? 0.0;
+    _intimacyLevels[chatId] = (current + delta).clamp(0.0, 100.0);
     _saveState();
   }
   
@@ -463,8 +463,8 @@ class AiSoulEngine {
   
   String generateStatePrompt() {
     final timeAwareness = getTimeAwareness();
-    final effectiveEnergy = (_energy + timeAwareness.energyModifier).clamp(0, 100);
-    final effectiveMood = (_mood + timeAwareness.moodModifier).clamp(-50, 50);
+    final effectiveEnergy = (_energy + timeAwareness.energyModifier).clamp(0.0, 100.0);
+    final effectiveMood = (_mood + timeAwareness.moodModifier).clamp(-50.0, 50.0);
     
     final buffer = StringBuffer();
     
@@ -603,9 +603,9 @@ class AiSoulEngine {
   
   /// 手动调整状态（调试用）
   void adjustState({double? energy, double? mood, double? stress}) {
-    if (energy != null) _energy = energy.clamp(0, 100);
-    if (mood != null) _mood = mood.clamp(-50, 50);
-    if (stress != null) _stress = stress.clamp(0, 100);
+    if (energy != null) _energy = energy.clamp(0.0, 100.0);
+    if (mood != null) _mood = mood.clamp(-50.0, 50.0);
+    if (stress != null) _stress = stress.clamp(0.0, 100.0);
     _saveState();
   }
 }
