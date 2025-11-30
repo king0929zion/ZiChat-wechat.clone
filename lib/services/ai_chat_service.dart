@@ -46,6 +46,7 @@ class AiChatService {
   static Stream<String> sendChatStream({
     required String chatId,
     required String userInput,
+    String? friendPrompt,
   }) async* {
     // 检查是否使用内置 API
     final useBuiltIn = await ModelSelectionStorage.getUseBuiltInApi();
@@ -86,7 +87,7 @@ class AiChatService {
     await Future.delayed(Duration(milliseconds: initialDelay));
 
     // 构建系统提示词
-    final systemPrompt = await _buildSystemPrompt(chatId, persona);
+    final systemPrompt = await _buildSystemPrompt(chatId, persona, friendPrompt);
     
     // 获取智能上下文历史
     final history = _getSmartHistory(chatId, userInput);
@@ -186,7 +187,7 @@ class AiChatService {
   }
 
   /// 构建系统提示词 (增强拟人化 + 状态感知)
-  static Future<String> _buildSystemPrompt(String chatId, String persona) async {
+  static Future<String> _buildSystemPrompt(String chatId, String persona, String? friendPrompt) async {
     final basePrompt = await _getBasePrompt();
     final contactPrompt = (await AiConfigStorage.loadContactPrompt(chatId)) ?? '';
     
@@ -195,6 +196,13 @@ class AiChatService {
     // 基础提示词
     if (basePrompt.trim().isNotEmpty) {
       buffer.writeln(basePrompt.trim());
+    }
+    
+    // 好友专属人设（来自添加好友时设置）
+    if (friendPrompt != null && friendPrompt.trim().isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('【你的人设】');
+      buffer.writeln(friendPrompt.trim());
     }
     
     // 加入完整的灵魂引擎状态提示
@@ -212,7 +220,7 @@ class AiChatService {
       buffer.writeln(persona.trim());
     }
     
-    // 联系人专属提示词
+    // 联系人专属提示词（聊天信息页设置的）
     if (contactPrompt.trim().isNotEmpty) {
       buffer.writeln();
       buffer.writeln('【针对这个朋友的特别说明】');

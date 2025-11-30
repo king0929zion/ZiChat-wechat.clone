@@ -14,6 +14,7 @@ import 'package:zichat/services/ai_chat_service.dart';
 import 'package:zichat/services/ai_tools_service.dart';
 import 'package:zichat/services/image_gen_service.dart';
 import 'package:zichat/storage/chat_storage.dart';
+import 'package:zichat/storage/friend_storage.dart';
 import 'widgets/widgets.dart';
 
 /// 聊天详情页 - 重构版本
@@ -31,12 +32,16 @@ class ChatDetailPage extends StatefulWidget {
     required this.title,
     required this.unread,
     this.pendingMessage,
+    this.friendPrompt,
+    this.avatar,
   });
 
   final String chatId;
   final String title;
   final int unread;
   final String? pendingMessage;
+  final String? friendPrompt;
+  final String? avatar;
 
   @override
   State<ChatDetailPage> createState() => _ChatDetailPageState();
@@ -116,6 +121,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Future<void> _saveMessages() async {
     final list = _messages.map((m) => m.toMap()).toList();
     await ChatStorage.saveMessages(widget.chatId, list);
+    
+    // 更新好友的最后消息
+    final lastTextMessage = _messages.lastWhere(
+      (m) => m.type == 'text' && m.text != null && m.text!.isNotEmpty,
+      orElse: () => _messages.last,
+    );
+    String lastMsg = lastTextMessage.text ?? '';
+    if (lastTextMessage.type == 'image') lastMsg = '[图片]';
+    if (lastTextMessage.type == 'transfer') lastMsg = '[转账]';
+    if (lastTextMessage.type == 'voice') lastMsg = '[语音]';
+    if (lastMsg.isNotEmpty) {
+      await FriendStorage.updateLastMessage(widget.chatId, lastMsg);
+    }
   }
 
   void _toggleVoice() {
@@ -271,6 +289,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       await for (final chunk in AiChatService.sendChatStream(
         chatId: widget.chatId,
         userInput: text,
+        friendPrompt: widget.friendPrompt,
       )) {
         if (!mounted) return;
         
@@ -549,6 +568,132 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
   
+  /// AI 领取用户转账并回复
+  Future<void> _scheduleAiReceiveTransfer(String transferId, double amount) async {
+    if (_aiRequesting) return;
+    
+    final random = math.Random();
+    // 延迟 2-5 秒领取
+    final delay = 2000 + random.nextInt(3000);
+    await Future.delayed(Duration(milliseconds: delay));
+    
+    if (!mounted) return;
+    
+    // 更新转账状态为已领取
+    setState(() {
+      final index = _messages.indexWhere((m) => m.id == transferId);
+      if (index != -1) {
+        _messages[index] = _messages[index].copyWith(
+          status: '已收款',
+        );
+      }
+    });
+    _saveMessages();
+    
+    // 再等 0.5-2 秒后 AI 回复
+    await Future.delayed(Duration(milliseconds: 500 + random.nextInt(1500)));
+    
+    if (!mounted || _aiRequesting) return;
+    
+    // 构造一条关于收到转账的上下文消息，让 AI 回复
+    setState(() {
+      _aiRequesting = true;
+    });
+    
+    final aiMessageId = 'ai-${DateTime.now().millisecondsSinceEpoch}';
+    final buffer = StringBuffer();
+    bool firstChunkReceived = false;
+    
+    try {
+      // 告诉 AI 收到了多少钱
+      final transferContext = '【系统提示：对方刚刚给你转了 $amount 元，你已经收下了。请自然地表达感谢或反应。】';
+      
+      await for (final chunk in AiChatService.sendChatStream(
+        chatId: widget.chatId,
+        userInput: transferContext,
+        friendPrompt: widget.friendPrompt,
+      )) {
+        if (!mounted) return;
+        if (chunk.isEmpty) continue;
+        
+        if (!firstChunkReceived) {
+          firstChunkReceived = true;
+          setState(() {
+            _messages.add(ChatMessage.text(
+              id: aiMessageId,
+              text: '',
+              isOutgoing: false,
+            ));
+          });
+        }
+        
+        buffer.write(chunk);
+        final displayText = _removeThinkingContent(buffer.toString());
+        
+        if (displayText.isNotEmpty) {
+          setState(() {
+            final index = _messages.indexWhere((m) => m.id == aiMessageId);
+            if (index != -1) {
+              _messages[index] = _messages[index].copyWith(text: displayText);
+            }
+          });
+          _scrollToBottom();
+        }
+      }
+      
+      if (!mounted) return;
+      
+      final fullText = buffer.toString();
+      final filteredText = _removeThinkingContent(fullText);
+      
+      if (filteredText.isEmpty) {
+        // 如果 AI 没有回复，使用默认回复
+        final defaultReplies = [
+          '收到啦，谢谢！',
+          '哇 谢谢你！',
+          '收到收到~',
+          '谢谢你的转账！',
+        ];
+        final reply = defaultReplies[random.nextInt(defaultReplies.length)];
+        setState(() {
+          _messages.removeWhere((m) => m.id == aiMessageId);
+          _messages.add(ChatMessage.text(
+            id: aiMessageId,
+            text: reply,
+            isOutgoing: false,
+          ));
+        });
+      } else {
+        // 清理文本
+        final cleanText = AiToolsService.removeToolMarkers(filteredText);
+        setState(() {
+          _messages.removeWhere((m) => m.id == aiMessageId);
+          _messages.add(ChatMessage.text(
+            id: aiMessageId,
+            text: cleanText.trim(),
+            isOutgoing: false,
+          ));
+        });
+      }
+      
+      setState(() => _aiRequesting = false);
+      _saveMessages();
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _messages.removeWhere((m) => m.id == aiMessageId);
+        _messages.add(ChatMessage.text(
+          id: aiMessageId,
+          text: '收到啦，谢谢！',
+          isOutgoing: false,
+        ));
+        _aiRequesting = false;
+      });
+      _saveMessages();
+    }
+  }
+  
   /// 保存 base64 图片到本地文件
   Future<String> _saveBase64Image(String base64Data, String id) async {
     final bytes = base64Decode(base64Data);
@@ -649,15 +794,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         )
             .then((amount) {
           if (!mounted || amount == null || amount <= 0) return;
+          final transferId = 'tr-${DateTime.now().millisecondsSinceEpoch}';
           setState(() {
             _messages.add(ChatMessage.transfer(
-              id: 'tr-${DateTime.now().millisecondsSinceEpoch}',
+              id: transferId,
               amount: amount.toStringAsFixed(2),
               isOutgoing: true,
             ));
           });
           _saveMessages();
           _scrollToBottom();
+          // AI 自动领取转账并回复
+          _scheduleAiReceiveTransfer(transferId, amount);
         });
         break;
       default:

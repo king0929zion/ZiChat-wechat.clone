@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
+import 'package:zichat/models/friend.dart';
 import 'package:zichat/pages/chat_detail/chat_detail_page.dart';
 import 'package:zichat/services/chat_event_manager.dart';
+import 'package:zichat/storage/friend_storage.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
@@ -14,9 +16,12 @@ class ChatsPage extends StatefulWidget {
 }
 
 class _ChatsPageState extends State<ChatsPage> {
+  List<_ChatItemData> _chatList = [];
+  
   @override
   void initState() {
     super.initState();
+    _loadChats();
     // 监听聊天事件
     ChatEventManager.instance.addListener(_onChatEvent);
   }
@@ -29,34 +34,116 @@ class _ChatsPageState extends State<ChatsPage> {
 
   void _onChatEvent() {
     if (mounted) {
-      setState(() {});
+      _loadChats();
     }
+  }
+  
+  void _loadChats() {
+    // 加载自定义好友
+    final friends = FriendStorage.getAllFriends();
+    
+    // 转换为聊天列表项
+    final friendChats = friends.map((f) => _ChatItemData(
+      id: f.id,
+      title: f.name,
+      avatar: f.avatar,
+      latestMessage: f.lastMessage ?? '开始聊天吧',
+      latestTime: _formatTime(f.lastMessageTime),
+      unread: f.unread,
+      muted: false,
+      isAiFriend: true,
+      prompt: f.prompt,
+    )).toList();
+    
+    // 合并预设聊天和自定义好友
+    final allChats = [...friendChats, ..._defaultChats];
+    
+    // 按最后消息时间排序（有消息的排前面）
+    allChats.sort((a, b) {
+      if (a.latestTime == b.latestTime) return 0;
+      if (a.latestTime == '开始聊天吧') return 1;
+      if (b.latestTime == '开始聊天吧') return -1;
+      return 0; // 保持原顺序
+    });
+    
+    setState(() {
+      _chatList = allChats;
+    });
+  }
+  
+  String _formatTime(DateTime? time) {
+    if (time == null) return '';
+    final now = DateTime.now();
+    final diff = now.difference(time);
+    
+    if (diff.inMinutes < 1) return '刚刚';
+    if (diff.inHours < 1) return '${diff.inMinutes}分钟前';
+    if (diff.inDays < 1) {
+      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    }
+    if (diff.inDays == 1) return '昨天';
+    if (diff.inDays < 7) return '${diff.inDays}天前';
+    return '${time.month}/${time.day}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.surface,
-      child: ListView.builder(
-        padding: EdgeInsets.zero,
-        physics: const BouncingScrollPhysics(),
-        itemCount: _mockChats.length,
-        itemBuilder: (context, index) {
-          final chat = _mockChats[index];
-          final bool isLast = index == _mockChats.length - 1;
-          
-          // 获取动态未读数
-          final dynamicUnread = ChatEventManager.instance.getUnreadCount(chat.id);
-          final totalUnread = chat.unread + dynamicUnread;
+      child: _chatList.isEmpty
+          ? _buildEmptyState()
+          : ListView.builder(
+              padding: EdgeInsets.zero,
+              physics: const BouncingScrollPhysics(),
+              itemCount: _chatList.length,
+              itemBuilder: (context, index) {
+                final chat = _chatList[index];
+                final bool isLast = index == _chatList.length - 1;
+                
+                // 获取动态未读数
+                final dynamicUnread = ChatEventManager.instance.getUnreadCount(chat.id);
+                final totalUnread = chat.unread + dynamicUnread;
 
-          return _ChatListItem(
-            chat: chat,
-            isLast: isLast,
-            index: index,
-            dynamicUnread: totalUnread,
-            hasPendingMessage: ChatEventManager.instance.hasPendingMessage(chat.id),
-          );
-        },
+                return _ChatListItem(
+                  chat: chat,
+                  isLast: isLast,
+                  index: index,
+                  dynamicUnread: totalUnread,
+                  hasPendingMessage: ChatEventManager.instance.hasPendingMessage(chat.id),
+                  onChatUpdated: _loadChats,
+                );
+              },
+            ),
+    );
+  }
+  
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 64,
+            color: AppColors.textHint,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '暂无聊天',
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '去通讯录添加一个 AI 好友吧',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textHint,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -70,13 +157,15 @@ class _ChatListItem extends StatefulWidget {
     required this.index,
     this.dynamicUnread = 0,
     this.hasPendingMessage = false,
+    this.onChatUpdated,
   });
 
-  final _ChatItem chat;
+  final _ChatItemData chat;
   final bool isLast;
   final int index;
   final int dynamicUnread;
   final bool hasPendingMessage;
+  final VoidCallback? onChatUpdated;
 
   @override
   State<_ChatListItem> createState() => _ChatListItemState();
@@ -112,27 +201,33 @@ class _ChatListItemState extends State<_ChatListItem>
     super.dispose();
   }
 
-  void _handleTap() {
+  void _handleTap() async {
     HapticFeedback.lightImpact();
     
     // 清除未读数
     ChatEventManager.instance.clearUnread(widget.chat.id);
     
+    // 如果是 AI 好友，清除存储的未读数
+    if (widget.chat.isAiFriend) {
+      await FriendStorage.clearUnread(widget.chat.id);
+    }
+    
     // 获取主动消息
     final pendingMessage = ChatEventManager.instance.getPendingMessage(widget.chat.id);
     
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           return ChatDetailPage(
             chatId: widget.chat.id,
             title: widget.chat.title,
+            avatar: widget.chat.avatar,
             unread: widget.dynamicUnread,
             pendingMessage: pendingMessage,
+            friendPrompt: widget.chat.prompt,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // iOS 风格的页面切换：新页面从右滑入 + 轻微缩放 + 淡入
           final slideAnimation = Tween<Offset>(
             begin: const Offset(0.3, 0),
             end: Offset.zero,
@@ -149,7 +244,6 @@ class _ChatListItemState extends State<_ChatListItem>
             curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
           ));
           
-          // 当前页面轻微缩小和淡出
           final secondarySlide = Tween<Offset>(
             begin: Offset.zero,
             end: const Offset(-0.1, 0),
@@ -172,6 +266,9 @@ class _ChatListItemState extends State<_ChatListItem>
         transitionDuration: const Duration(milliseconds: 300),
       ),
     );
+    
+    // 返回时刷新列表
+    widget.onChatUpdated?.call();
   }
 
   @override
@@ -290,12 +387,19 @@ class _ChatAvatar extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
-            child: Image.asset(
-              avatar,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-            ),
+            child: avatar.startsWith('assets/')
+                ? Image.asset(
+                    avatar,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: 48,
+                    height: 48,
+                    color: AppColors.background,
+                    child: const Icon(Icons.person, size: 28),
+                  ),
           ),
           if (unread > 0)
             Positioned(
@@ -340,8 +444,9 @@ class _ChatAvatar extends StatelessWidget {
   }
 }
 
-class _ChatItem {
-  const _ChatItem({
+/// 聊天列表数据模型
+class _ChatItemData {
+  const _ChatItemData({
     required this.id,
     required this.title,
     required this.avatar,
@@ -349,6 +454,8 @@ class _ChatItem {
     required this.latestTime,
     required this.unread,
     required this.muted,
+    this.isAiFriend = false,
+    this.prompt,
   });
 
   final String id;
@@ -358,10 +465,13 @@ class _ChatItem {
   final String latestTime;
   final int unread;
   final bool muted;
+  final bool isAiFriend;
+  final String? prompt;
 }
 
-const List<_ChatItem> _mockChats = [
-  _ChatItem(
+/// 预设的聊天列表
+const List<_ChatItemData> _defaultChats = [
+  _ChatItemData(
     id: 'c1',
     title: '产品例会',
     avatar: 'assets/group-chat.jpg',
@@ -370,7 +480,7 @@ const List<_ChatItem> _mockChats = [
     unread: 2,
     muted: false,
   ),
-  _ChatItem(
+  _ChatItemData(
     id: 'c2',
     title: '设计讨论',
     avatar: 'assets/avatar.png',
@@ -379,7 +489,7 @@ const List<_ChatItem> _mockChats = [
     unread: 0,
     muted: true,
   ),
-  _ChatItem(
+  _ChatItemData(
     id: 'c3',
     title: '文件传输助手',
     avatar: 'assets/avatar-default.jpeg',
@@ -388,7 +498,7 @@ const List<_ChatItem> _mockChats = [
     unread: 0,
     muted: false,
   ),
-  _ChatItem(
+  _ChatItemData(
     id: 'c4',
     title: 'Call with Tim',
     avatar: 'assets/me.png',
@@ -397,7 +507,7 @@ const List<_ChatItem> _mockChats = [
     unread: 5,
     muted: false,
   ),
-  _ChatItem(
+  _ChatItemData(
     id: 'c5',
     title: '客户反馈',
     avatar: 'assets/bella.jpeg',
