@@ -355,6 +355,7 @@ class AiChatService {
       );
       
       debugPrint('API Response Status: ${response.statusCode}');
+      debugPrint('API Response Headers: ${response.headers}');
 
       if (response.statusCode != 200) {
         final respBody = await response.stream.bytesToString();
@@ -364,6 +365,8 @@ class AiChatService {
 
       String buffer = '';
       int chunkCount = 0;
+      
+      debugPrint('Starting to read response stream...');
       
       await for (final chunk in response.stream.transform(utf8.decoder)) {
         chunkCount++;
