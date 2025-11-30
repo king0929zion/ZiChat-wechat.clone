@@ -126,7 +126,7 @@ class ProactiveMessageService {
     }
     
     // 发送消息
-    if (message != null && message.isNotEmpty) {
+    if (message != null && message.isNotEmpty && reason != null) {
       await _messageBox?.put('last_proactive_time', now.toIso8601String());
       await _messageBox?.put('last_proactive_reason', reason);
       
