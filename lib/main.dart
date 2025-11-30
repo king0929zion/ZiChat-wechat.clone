@@ -18,6 +18,7 @@ import 'package:zichat/services/notification_service.dart';
 import 'package:zichat/services/proactive_message_service.dart';
 import 'package:zichat/services/svg_precache_service.dart';
 import 'package:zichat/storage/friend_storage.dart';
+import 'package:zichat/storage/chat_background_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,9 @@ Future<void> main() async {
   
   // 初始化好友存储
   await FriendStorage.initialize();
+  
+  // 初始化聊天背景存储
+  await ChatBackgroundStorage.initialize();
   
   runApp(const MyApp());
 }

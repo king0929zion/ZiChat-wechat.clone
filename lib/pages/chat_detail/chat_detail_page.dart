@@ -14,6 +14,7 @@ import 'package:zichat/services/ai_chat_service.dart';
 import 'package:zichat/services/ai_tools_service.dart';
 import 'package:zichat/services/image_gen_service.dart';
 import 'package:zichat/storage/chat_storage.dart';
+import 'package:zichat/storage/chat_background_storage.dart';
 import 'package:zichat/storage/friend_storage.dart';
 import 'widgets/widgets.dart';
 
@@ -57,12 +58,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   bool _aiRequesting = false;
   List<ChatMessage> _messages = [];
   final List<String> _recentEmojis = [];
+  String? _backgroundPath;
 
   @override
   void initState() {
     super.initState();
     _inputController.addListener(_onInputChanged);
     _loadMessages();
+    _loadBackground();
+  }
+
+  void _loadBackground() {
+    _backgroundPath = ChatBackgroundStorage.getBackground(widget.chatId);
   }
 
   @override
@@ -841,6 +848,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       scrollController: _scrollController,
                       messages: _messages,
                       isAiRequesting: _aiRequesting,
+                      backgroundPath: _backgroundPath,
                     ),
                   ),
                 ),
@@ -901,16 +909,39 @@ class _MessageList extends StatelessWidget {
     required this.scrollController,
     required this.messages,
     required this.isAiRequesting,
+    this.backgroundPath,
   });
 
   final ScrollController scrollController;
   final List<ChatMessage> messages;
   final bool isAiRequesting;
+  final String? backgroundPath;
+
+  Color _getBackgroundColor() {
+    if (backgroundPath == null) return AppColors.backgroundChat;
+    if (backgroundPath!.startsWith('color:')) {
+      final colorValue = int.tryParse(backgroundPath!.substring(6));
+      if (colorValue != null) return Color(colorValue);
+    }
+    return AppColors.backgroundChat;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final hasImageBackground = backgroundPath != null && 
+        !backgroundPath!.startsWith('color:') && 
+        File(backgroundPath!).existsSync();
+
     return Container(
-      color: AppColors.backgroundChat,
+      decoration: BoxDecoration(
+        color: _getBackgroundColor(),
+        image: hasImageBackground
+            ? DecorationImage(
+                image: FileImage(File(backgroundPath!)),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
       child: ListView.builder(
         controller: scrollController,
         physics: const BouncingScrollPhysics(),

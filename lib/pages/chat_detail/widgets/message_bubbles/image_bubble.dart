@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
 import 'package:zichat/models/chat_message.dart';
@@ -182,6 +184,83 @@ class _FullScreenImage extends StatelessWidget {
   final String imagePath;
   final Animation<double> animation;
 
+  Future<void> _saveImage(BuildContext context) async {
+    try {
+      Uint8List bytes;
+      
+      if (imagePath.startsWith('assets/')) {
+        // 从 assets 读取
+        final data = await rootBundle.load(imagePath);
+        bytes = data.buffer.asUint8List();
+      } else {
+        // 从文件读取
+        final file = File(imagePath);
+        bytes = await file.readAsBytes();
+      }
+      
+      // 保存到应用目录（相册需要额外权限）
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName = 'saved_${DateTime.now().millisecondsSinceEpoch}.png';
+      final savedFile = File('${dir.path}/$fileName');
+      await savedFile.writeAsBytes(bytes);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('图片已保存'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('保存失败: $e'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showActionMenu(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.save_alt, color: AppColors.textPrimary),
+              title: const Text('保存图片'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _saveImage(context);
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.close, color: AppColors.textSecondary),
+              title: const Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+              onTap: () => Navigator.of(ctx).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget image;
@@ -193,6 +272,7 @@ class _FullScreenImage extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
+      onLongPress: () => _showActionMenu(context),
       onVerticalDragEnd: (details) {
         if (details.primaryVelocity != null &&
             details.primaryVelocity!.abs() > 300) {
@@ -201,12 +281,35 @@ class _FullScreenImage extends StatelessWidget {
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
-          child: InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: image,
-          ),
+        body: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: image,
+              ),
+            ),
+            // 底部提示
+            Positioned(
+              bottom: 50,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    '长按保存图片',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
