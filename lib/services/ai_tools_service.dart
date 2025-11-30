@@ -134,14 +134,9 @@ class AiToolsService {
     return TransferResult(amount: amount, note: note);
   }
   
-  /// 生成工具使用的系统提示
+  /// 生成工具使用的系统提示（已整合到主提示词，这里返回空）
   static String generateToolPrompt() {
-    final buffer = StringBuffer();
-    buffer.writeln('【工具】想分享东西时可以用：');
-    buffer.writeln('[图片:描述] [转账:金额] [表情:名称]');
-    buffer.writeln('例如：[图片:我的猫] 或 [转账:6.66]');
-    buffer.writeln('别老用，偶尔用就行。');
-    return buffer.toString();
+    return '';
   }
 }
 
