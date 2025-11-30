@@ -442,7 +442,7 @@ class AiChatService {
               debugPrint('No choices in response: $data');
             }
           } catch (e) {
-            debugPrint('SSE JSON parse error: $e, line: $jsonStr');
+            debugPrint('SSE JSON parse error: $e, line: ${line.substring(0, line.length > 50 ? 50 : line.length)}');
           }
         }
       }
