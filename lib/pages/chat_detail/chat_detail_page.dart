@@ -281,67 +281,29 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
 
     final buffer = StringBuffer();
-    bool firstChunkReceived = false;
     final aiMessageId = 'ai-${DateTime.now().millisecondsSinceEpoch}';
-    DateTime? lastUpdate;
 
     try {
+      // 流式响应期间不显示临时消息，只显示"正在输入"状态
       await for (final chunk in AiChatService.sendChatStream(
         chatId: widget.chatId,
         userInput: text,
         friendPrompt: widget.friendPrompt,
       )) {
         if (!mounted) return;
-        
-        // 跳过空 chunk
         if (chunk.isEmpty) continue;
-        
-        // 收到第一个有效字符时，创建消息
-        if (!firstChunkReceived) {
-          firstChunkReceived = true;
-          setState(() {
-            _messages.add(ChatMessage.text(
-              id: aiMessageId,
-              text: '',
-              isOutgoing: false,
-            ));
-          });
-        }
-        
         buffer.write(chunk);
-        lastUpdate = DateTime.now();
-        
-        // 实时更新消息内容，过滤 thinking 标签和工具调用标记
-        var displayText = _removeThinkingContent(buffer.toString());
-        displayText = AiToolsService.removeToolMarkers(displayText);
-        
-        // 只有有实际内容时才更新显示
-        if (displayText.isNotEmpty) {
-          setState(() {
-            final index = _messages.indexWhere((m) => m.id == aiMessageId);
-            if (index != -1) {
-              _messages[index] = _messages[index].copyWith(
-                text: displayText,
-              );
-            }
-          });
-          _scrollToBottom();
-        }
       }
 
       if (!mounted) return;
       
-      // 流式完成后，解析工具调用和分句
       final fullText = buffer.toString();
       
-      // 调试：打印原始内容
       debugPrint('AI raw response length: ${fullText.length}');
-      debugPrint('AI raw response: ${fullText.substring(0, fullText.length > 200 ? 200 : fullText.length)}...');
       
       // 如果原始内容为空
       if (fullText.isEmpty) {
         setState(() {
-          _messages.removeWhere((m) => m.id == aiMessageId);
           _messages.add(ChatMessage.system(
             id: 'sys-${DateTime.now().millisecondsSinceEpoch}',
             text: '未收到 AI 回复，请检查网络或 API 配置',
@@ -355,19 +317,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       // 过滤 thinking 标签内容
       final filteredText = _removeThinkingContent(fullText);
       
-      debugPrint('AI filtered response length: ${filteredText.length}');
-      
-      // 如果过滤后没有内容，说明全是 thinking
+      // 如果过滤后没有内容
       if (filteredText.isEmpty) {
-        // 检查是否有 thinking 内容
         final hasThinking = fullText.contains('<think') || 
                            fullText.contains('<thinking') ||
                            fullText.contains('【思考】');
         
         setState(() {
-          _messages.removeWhere((m) => m.id == aiMessageId);
           if (hasThinking) {
-            // 有 thinking 内容但没有实际回复，直接显示原始内容（去掉标签）
             final rawContent = fullText
                 .replaceAll(RegExp(r'</?think[^>]*>', caseSensitive: false), '')
                 .replaceAll(RegExp(r'</?thinking[^>]*>', caseSensitive: false), '')
@@ -404,35 +361,45 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       // 移除工具标记后的文本
       final cleanText = AiToolsService.removeToolMarkers(filteredText);
       
-      // 按反斜线分句处理
-      final parts = cleanText
-          .split('\\')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
+      // 智能分句：按换行符或反斜杠分隔，模拟多条消息
+      final parts = _splitIntoMessages(cleanText);
 
-      setState(() {
-        // 移除临时消息
-        _messages.removeWhere((m) => m.id == aiMessageId);
-        
-        // 添加分句后的消息
-        if (parts.isEmpty && cleanText.trim().isNotEmpty) {
+      // 依次添加消息，带延迟模拟真实聊天节奏
+      if (parts.isEmpty && cleanText.trim().isNotEmpty) {
+        // 只有一条消息
+        setState(() {
           _messages.add(ChatMessage.text(
             id: aiMessageId,
             text: cleanText.trim(),
             isOutgoing: false,
           ));
-        } else if (parts.isNotEmpty) {
-          for (int i = 0; i < parts.length; i++) {
+          _aiRequesting = false;
+        });
+      } else if (parts.isNotEmpty) {
+        // 多条消息，依次显示带延迟
+        for (int i = 0; i < parts.length; i++) {
+          if (i > 0) {
+            // 后续消息有延迟，模拟打字
+            await Future.delayed(Duration(milliseconds: 300 + parts[i].length * 20));
+          }
+          if (!mounted) return;
+          setState(() {
             _messages.add(ChatMessage.text(
               id: '$aiMessageId-$i',
               text: parts[i],
               isOutgoing: false,
             ));
-          }
+            if (i == parts.length - 1) {
+              _aiRequesting = false;
+            }
+          });
+          _scrollToBottom();
         }
-        _aiRequesting = false;
-      });
+      } else {
+        setState(() {
+          _aiRequesting = false;
+        });
+      }
       
       // 处理工具调用
       await _processToolCalls(toolCalls, aiMessageId);
@@ -442,9 +409,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        // 移除临时消息
-        _messages.removeWhere((m) => m.id == aiMessageId);
-        
         _messages.add(ChatMessage.system(
           id: 'sys-${DateTime.now().millisecondsSinceEpoch}',
           text: '出错了：$e',
@@ -752,6 +716,49 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     result = result.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     
     return result.trim();
+  }
+
+  /// 智能分句：将 AI 回复拆分成多条消息
+  List<String> _splitIntoMessages(String text) {
+    // 先处理反斜杠分隔符（兼容旧格式）
+    if (text.contains('\\')) {
+      return text
+          .split('\\')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    
+    // 按换行符分隔
+    final lines = text
+        .split('\n')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    
+    // 如果多于1行，直接返回
+    if (lines.length > 1) {
+      return lines;
+    }
+    
+    // 单行长文本尝试按中文句号分句（只对长文本）
+    final singleLine = text.trim();
+    if (singleLine.length > 30) {
+      // 按句号、问号、感叹号分句
+      final sentences = singleLine
+          .split(RegExp(r'(?<=[。！？])\s*'))
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      
+      // 只有当分出多句时才使用
+      if (sentences.length > 1) {
+        return sentences;
+      }
+    }
+    
+    // 默认返回原文
+    return [singleLine];
   }
 
   Future<void> _pickImage(ImageSource source) async {
