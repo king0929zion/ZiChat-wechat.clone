@@ -17,8 +17,8 @@ class AiToolsService {
   static List<AiToolCall> parseToolCalls(String response) {
     final calls = <AiToolCall>[];
     
-    // 匹配 <tool>xxx</tool> 格式
-    final toolPattern = RegExp(r'<tool>(\w+)\(([^)]*)\)</tool>');
+    // 匹配 <tool>xxx(param)</tool> 格式，支持嵌套括号
+    final toolPattern = RegExp(r'<tool>(\w+)[（(](.+?)[)）]</tool>');
     
     for (final match in toolPattern.allMatches(response)) {
       final toolName = match.group(1)?.toLowerCase() ?? '';
@@ -115,14 +115,20 @@ class AiToolsService {
   
   /// 移除回复中的工具调用标记
   static String removeToolMarkers(String response) {
-    return response
-        // 新格式 <tool>xxx</tool>
-        .replaceAll(RegExp(r'<tool>\w+\([^)]*\)</tool>'), '')
-        // 旧格式
-        .replaceAll(RegExp(r'image_gen\([^)]*\)'), '')
-        .replaceAll(RegExp(r'transfer\([^)]*\)'), '')
-        .replaceAll(RegExp(r'emoji\([^)]*\)'), '')
-        .trim();
+    var result = response;
+    
+    // 新格式 <tool>xxx</tool> - 支持嵌套括号
+    result = result.replaceAll(RegExp(r'<tool>[^<]*</tool>'), '');
+    
+    // 旧格式 - 支持中文括号
+    result = result.replaceAll(RegExp(r'image_gen[（(][^)）]*[)）]'), '');
+    result = result.replaceAll(RegExp(r'transfer[（(][^)）]*[)）]'), '');
+    result = result.replaceAll(RegExp(r'emoji[（(][^)）]*[)）]'), '');
+    
+    // 清理多余空白
+    result = result.replaceAll(RegExp(r'\n{2,}'), '\n');
+    
+    return result.trim();
   }
   
   /// 根据情绪判断是否应该发红包/转账

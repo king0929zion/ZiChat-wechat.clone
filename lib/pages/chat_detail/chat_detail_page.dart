@@ -486,12 +486,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           // AI 生成图片
           final prompt = call.params['prompt'] as String? ?? '';
           if (prompt.isNotEmpty) {
-            // 显示生成中提示
+            // 显示加载中提示
             final genMsgId = '$baseId-gen-$toolIndex';
             setState(() {
               _messages.add(ChatMessage.system(
                 id: genMsgId,
-                text: '正在生成图片...',
+                text: '图片加载中...',
               ));
             });
             _scrollToBottom();
