@@ -99,6 +99,8 @@ class AiChatService {
 
     // 内置 API 都是 OpenAI 兼容格式，使用流式输出
     final buffer = StringBuffer();
+    final thinkingBuffer = StringBuffer();
+    bool inThinking = false;
     
     await for (final chunk in _callOpenAiStream(
       baseUrl: apiBaseUrl,
@@ -108,11 +110,46 @@ class AiChatService {
       userInput: userInput,
       history: history,
     )) {
-      buffer.write(chunk);
-      yield chunk;
+      // 处理 thinking 标签（DeepSeek 等模型）
+      String processedChunk = chunk;
+      
+      // 检测 <think> 开始标签
+      if (processedChunk.contains('<think>')) {
+        inThinking = true;
+        final parts = processedChunk.split('<think>');
+        if (parts[0].isNotEmpty) {
+          buffer.write(parts[0]);
+          yield parts[0];
+        }
+        if (parts.length > 1) {
+          thinkingBuffer.write(parts[1]);
+        }
+        continue;
+      }
+      
+      // 检测 </think> 结束标签
+      if (inThinking) {
+        if (processedChunk.contains('</think>')) {
+          inThinking = false;
+          final parts = processedChunk.split('</think>');
+          // 丢弃 thinking 内容，只保留后面的
+          if (parts.length > 1 && parts[1].isNotEmpty) {
+            buffer.write(parts[1]);
+            yield parts[1];
+          }
+        } else {
+          // 仍在 thinking 中，丢弃
+          thinkingBuffer.write(processedChunk);
+        }
+        continue;
+      }
+      
+      // 普通内容
+      buffer.write(processedChunk);
+      yield processedChunk;
     }
     
-    // 记录 AI 回复到历史
+    // 记录 AI 回复到历史（不包含 thinking）
     _addToHistory(chatId, 'assistant', buffer.toString());
   }
 

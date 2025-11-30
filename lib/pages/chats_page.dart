@@ -4,9 +4,34 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
 import 'package:zichat/pages/chat_detail/chat_detail_page.dart';
+import 'package:zichat/services/chat_event_manager.dart';
 
-class ChatsPage extends StatelessWidget {
+class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
+
+  @override
+  State<ChatsPage> createState() => _ChatsPageState();
+}
+
+class _ChatsPageState extends State<ChatsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // 监听聊天事件
+    ChatEventManager.instance.addListener(_onChatEvent);
+  }
+
+  @override
+  void dispose() {
+    ChatEventManager.instance.removeListener(_onChatEvent);
+    super.dispose();
+  }
+
+  void _onChatEvent() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +44,17 @@ class ChatsPage extends StatelessWidget {
         itemBuilder: (context, index) {
           final chat = _mockChats[index];
           final bool isLast = index == _mockChats.length - 1;
+          
+          // 获取动态未读数
+          final dynamicUnread = ChatEventManager.instance.getUnreadCount(chat.id);
+          final totalUnread = chat.unread + dynamicUnread;
 
           return _ChatListItem(
             chat: chat,
             isLast: isLast,
             index: index,
+            dynamicUnread: totalUnread,
+            hasPendingMessage: ChatEventManager.instance.hasPendingMessage(chat.id),
           );
         },
       ),
@@ -37,11 +68,15 @@ class _ChatListItem extends StatefulWidget {
     required this.chat,
     required this.isLast,
     required this.index,
+    this.dynamicUnread = 0,
+    this.hasPendingMessage = false,
   });
 
   final _ChatItem chat;
   final bool isLast;
   final int index;
+  final int dynamicUnread;
+  final bool hasPendingMessage;
 
   @override
   State<_ChatListItem> createState() => _ChatListItemState();
@@ -79,13 +114,21 @@ class _ChatListItemState extends State<_ChatListItem>
 
   void _handleTap() {
     HapticFeedback.lightImpact();
+    
+    // 清除未读数
+    ChatEventManager.instance.clearUnread(widget.chat.id);
+    
+    // 获取主动消息
+    final pendingMessage = ChatEventManager.instance.getPendingMessage(widget.chat.id);
+    
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           return ChatDetailPage(
             chatId: widget.chat.id,
             title: widget.chat.title,
-            unread: widget.chat.unread,
+            unread: widget.dynamicUnread,
+            pendingMessage: pendingMessage,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -153,7 +196,7 @@ class _ChatListItemState extends State<_ChatListItem>
                     padding: const EdgeInsets.only(left: 16, right: 12),
                     child: _ChatAvatar(
                       avatar: widget.chat.avatar,
-                      unread: widget.chat.unread,
+                      unread: widget.dynamicUnread,
                     ),
                   ),
                   Expanded(

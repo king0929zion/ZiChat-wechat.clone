@@ -30,11 +30,13 @@ class ChatDetailPage extends StatefulWidget {
     required this.chatId,
     required this.title,
     required this.unread,
+    this.pendingMessage,
   });
 
   final String chatId;
   final String title;
   final int unread;
+  final String? pendingMessage;
 
   @override
   State<ChatDetailPage> createState() => _ChatDetailPageState();
@@ -92,6 +94,22 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     setState(() {
       _messages = stored.map(ChatMessage.fromMap).toList();
     });
+    
+    // 处理主动消息
+    if (widget.pendingMessage != null && widget.pendingMessage!.isNotEmpty) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage.text(
+            id: 'proactive-${DateTime.now().millisecondsSinceEpoch}',
+            text: widget.pendingMessage!,
+            isOutgoing: false,
+          ));
+        });
+        _saveMessages();
+      }
+    }
+    
     _scrollToBottom(animated: false);
   }
 
@@ -247,6 +265,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     final buffer = StringBuffer();
     bool firstChunkReceived = false;
     final aiMessageId = 'ai-${DateTime.now().millisecondsSinceEpoch}';
+    DateTime? lastUpdate;
 
     try {
       await for (final chunk in AiChatService.sendChatStream(
@@ -255,7 +274,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       )) {
         if (!mounted) return;
         
-        // 收到第一个字符时，创建真正的消息
+        // 跳过空 chunk
+        if (chunk.isEmpty) continue;
+        
+        // 收到第一个有效字符时，创建消息
         if (!firstChunkReceived) {
           firstChunkReceived = true;
           setState(() {
@@ -268,8 +290,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         }
         
         buffer.write(chunk);
+        lastUpdate = DateTime.now();
         
-        // 实时更新消息内容
+        // 实时更新消息内容（节流：至少 50ms 间隔）
         setState(() {
           final index = _messages.indexWhere((m) => m.id == aiMessageId);
           if (index != -1) {
@@ -285,6 +308,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       
       // 流式完成后，解析工具调用和分句
       final fullText = buffer.toString();
+      
+      // 如果没有收到任何内容
+      if (fullText.isEmpty) {
+        setState(() {
+          _messages.add(ChatMessage.system(
+            id: 'sys-${DateTime.now().millisecondsSinceEpoch}',
+            text: 'AI 正在思考中，请稍后再试...',
+          ));
+          _aiRequesting = false;
+        });
+        _saveMessages();
+        return;
+      }
       
       // 解析工具调用
       final toolCalls = AiToolsService.parseToolCalls(fullText);
@@ -310,7 +346,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             text: cleanText.trim(),
             isOutgoing: false,
           ));
-        } else {
+        } else if (parts.isNotEmpty) {
           for (int i = 0; i < parts.length; i++) {
             _messages.add(ChatMessage.text(
               id: '$aiMessageId-$i',

@@ -13,6 +13,7 @@ import 'package:zichat/pages/add_contacts_page.dart';
 import 'package:zichat/pages/code_scanner_page.dart';
 import 'package:zichat/pages/money_qrcode_page.dart';
 import 'package:zichat/services/ai_soul_engine.dart';
+import 'package:zichat/services/chat_event_manager.dart';
 import 'package:zichat/services/proactive_message_service.dart';
 import 'package:zichat/services/svg_precache_service.dart';
 
@@ -37,6 +38,9 @@ Future<void> main() async {
   
   // 初始化主动消息服务
   await ProactiveMessageService.instance.initialize();
+  
+  // 初始化聊天事件管理器
+  await ChatEventManager.instance.initialize();
   
   runApp(const MyApp());
 }
