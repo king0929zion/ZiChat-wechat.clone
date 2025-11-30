@@ -341,143 +341,44 @@ class AiChatService {
       'model': model,
       'messages': messages,
       'temperature': 0.8,
-      'stream': true,
+      'stream': false,  // 禁用流式输出
     });
 
-    final request = http.Request('POST', uri);
-    request.headers['Content-Type'] = 'application/json';
-    request.headers['Authorization'] = 'Bearer $apiKey';
-    request.body = body;
-    
     debugPrint('API Request URL: $uri');
     debugPrint('API Request Model: $model');
     debugPrint('API Request Messages count: ${messages.length}');
 
-    final client = http.Client();
-    bool hasYielded = false;
-    
     try {
-      final response = await client.send(request).timeout(
-        const Duration(seconds: 60),
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: body,
+      ).timeout(
+        const Duration(seconds: 120),
         onTimeout: () => throw TimeoutException('请求超时'),
       );
       
       debugPrint('API Response Status: ${response.statusCode}');
-      debugPrint('API Response Headers: ${response.headers}');
 
       if (response.statusCode != 200) {
-        final respBody = await response.stream.bytesToString();
-        debugPrint('API Error Response: $respBody');
-        throw Exception('API 错误 (${response.statusCode}): $respBody');
+        debugPrint('API Error Response: ${response.body}');
+        throw Exception('API 错误 (${response.statusCode}): ${response.body}');
       }
 
-      String buffer = '';
-      int chunkCount = 0;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final content = _extractContent(data);
       
-      debugPrint('Starting to read response stream...');
+      debugPrint('API Response content length: ${content.length}');
       
-      await for (final chunk in response.stream.transform(utf8.decoder)) {
-        chunkCount++;
-        buffer += chunk;
-        debugPrint('Stream chunk #$chunkCount received, length: ${chunk.length}');
-        
-        // 处理 SSE 格式
-        while (buffer.contains('\n')) {
-          final index = buffer.indexOf('\n');
-          final line = buffer.substring(0, index).trim();
-          buffer = buffer.substring(index + 1);
-          
-          if (line.isEmpty) continue;
-          
-          debugPrint('Processing line: ${line.substring(0, line.length > 100 ? 100 : line.length)}...');
-          
-          if (line == 'data: [DONE]' || line == 'data:[DONE]') {
-            debugPrint('Stream done, hasYielded: $hasYielded');
-            // 如果到这里还没有输出内容，尝试解析非流式响应
-            if (!hasYielded && buffer.isNotEmpty) {
-              debugPrint('Trying to parse remaining buffer as JSON');
-              try {
-                final data = jsonDecode(buffer) as Map<String, dynamic>;
-                final content = _extractContent(data);
-                if (content.isNotEmpty) {
-                  yield content;
-                  hasYielded = true;
-                }
-              } catch (e) {
-                debugPrint('JSON parse error: $e');
-              }
-            }
-            return;
-          }
-          // 支持 "data: {...}" 和 "data:{...}" 两种格式
-          String jsonStr;
-          if (line.startsWith('data: ')) {
-            jsonStr = line.substring(6);
-          } else if (line.startsWith('data:')) {
-            jsonStr = line.substring(5);
-          } else {
-            debugPrint('Non-SSE line, trying JSON parse');
-            // 可能是非 SSE 格式的 JSON 响应
-            try {
-              final data = jsonDecode(line) as Map<String, dynamic>;
-              final content = _extractContent(data);
-              if (content.isNotEmpty) {
-                yield content;
-                hasYielded = true;
-              }
-            } catch (e) {
-              debugPrint('Non-SSE JSON parse failed: $e');
-            }
-            continue;
-          }
-          
-          try {
-            final data = jsonDecode(jsonStr) as Map<String, dynamic>;
-            final choices = data['choices'] as List<dynamic>?;
-            if (choices != null && choices.isNotEmpty) {
-              final choice = choices[0] as Map<String, dynamic>;
-              // 尝试流式格式
-              final delta = choice['delta'] as Map<String, dynamic>?;
-              if (delta != null) {
-                final content = delta['content'] as String?;
-                if (content != null && content.isNotEmpty) {
-                  yield content;
-                  hasYielded = true;
-                }
-              }
-              // 尝试非流式格式
-              final message = choice['message'] as Map<String, dynamic>?;
-              if (message != null) {
-                final content = message['content'] as String?;
-                if (content != null && content.isNotEmpty) {
-                  yield content;
-                  hasYielded = true;
-                }
-              }
-            } else {
-              debugPrint('No choices in response: $data');
-            }
-          } catch (e) {
-            debugPrint('SSE JSON parse error: $e, line: ${line.substring(0, line.length > 50 ? 50 : line.length)}');
-          }
-        }
+      if (content.isNotEmpty) {
+        yield content;
       }
-      
-      debugPrint('Stream ended, total chunks: $chunkCount, hasYielded: $hasYielded');
-      
-      // 处理剩余的 buffer（可能是完整的 JSON 响应）
-      if (!hasYielded && buffer.trim().isNotEmpty) {
-        debugPrint('Processing remaining buffer: ${buffer.substring(0, buffer.length > 200 ? 200 : buffer.length)}');
-        try {
-          final data = jsonDecode(buffer.trim()) as Map<String, dynamic>;
-          final content = _extractContent(data);
-          if (content.isNotEmpty) {
-            yield content;
-          }
-        } catch (_) {}
-      }
-    } finally {
-      client.close();
+    } catch (e) {
+      debugPrint('API call error: $e');
+      rethrow;
     }
   }
   

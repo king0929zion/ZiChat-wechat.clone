@@ -361,8 +361,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       // 移除工具标记后的文本
       final cleanText = AiToolsService.removeToolMarkers(filteredText);
       
-      // 智能分句：按换行符或反斜杠分隔，模拟多条消息
-      final parts = _splitIntoMessages(cleanText);
+      // 按反斜杠分句
+      final parts = cleanText
+          .split('\\')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
 
       // 依次添加消息，带延迟模拟真实聊天节奏
       if (parts.isEmpty && cleanText.trim().isNotEmpty) {
@@ -716,49 +720,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     result = result.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     
     return result.trim();
-  }
-
-  /// 智能分句：将 AI 回复拆分成多条消息
-  List<String> _splitIntoMessages(String text) {
-    // 先处理反斜杠分隔符（兼容旧格式）
-    if (text.contains('\\')) {
-      return text
-          .split('\\')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-    }
-    
-    // 按换行符分隔
-    final lines = text
-        .split('\n')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    
-    // 如果多于1行，直接返回
-    if (lines.length > 1) {
-      return lines;
-    }
-    
-    // 单行长文本尝试按中文句号分句（只对长文本）
-    final singleLine = text.trim();
-    if (singleLine.length > 30) {
-      // 按句号、问号、感叹号分句
-      final sentences = singleLine
-          .split(RegExp(r'(?<=[。！？])\s*'))
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-      
-      // 只有当分出多句时才使用
-      if (sentences.length > 1) {
-        return sentences;
-      }
-    }
-    
-    // 默认返回原文
-    return [singleLine];
   }
 
   Future<void> _pickImage(ImageSource source) async {
