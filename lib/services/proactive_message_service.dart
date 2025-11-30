@@ -115,7 +115,7 @@ class ProactiveMessageService {
   }
   
   /// 计算最小消息间隔（分钟）
-  int _calculateMinInterval(AiState state) {
+  int _calculateMinInterval(AiSoulState state) {
     // 基础间隔 30 分钟
     int baseInterval = 30;
     
@@ -143,7 +143,7 @@ class ProactiveMessageService {
   }
   
   /// 选择触发条件
-  _ProactiveTrigger? _selectTrigger(AiState state, DateTime now) {
+  _ProactiveTrigger? _selectTrigger(AiSoulState state, DateTime now) {
     final triggers = <_ProactiveTrigger>[];
     
     // 1. 时间触发 - 更丰富的时间点
