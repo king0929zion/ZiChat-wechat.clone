@@ -136,27 +136,11 @@ class AiToolsService {
   
   /// 生成工具使用的系统提示
   static String generateToolPrompt() {
-    final hasImageGen = ImageGenService.isAvailable;
-    
     final buffer = StringBuffer();
-    buffer.writeln();
-    buffer.writeln('【你可以使用的工具】');
-    buffer.writeln('当你想分享图片、发红包时，可以在回复中使用以下格式：');
-    buffer.writeln('- 分享图片：[图片:描述内容]，例如：[图片:刚买的奶茶]');
-    if (hasImageGen) {
-      buffer.writeln('- AI生成图片：[生成图片:详细描述]，例如：[生成图片:一只可爱的橘猫在阳光下睡觉]');
-    }
-    buffer.writeln('- 发红包/转账：[转账:金额]，例如：[转账:1.88]');
-    buffer.writeln('- 发表情：[表情:表情描述]，例如：[表情:开心]');
-    buffer.writeln();
-    buffer.writeln('注意：');
-    buffer.writeln('- 不要滥用工具，只在合适的时候使用');
-    buffer.writeln('- 发红包只在特殊场合（生日、庆祝等）');
-    buffer.writeln('- 分享图片要自然，像朋友分享生活一样');
-    if (hasImageGen) {
-      buffer.writeln('- AI生成图片用于创意场景，描述要详细具体');
-    }
-    
+    buffer.writeln('【工具】想分享东西时可以用：');
+    buffer.writeln('[图片:描述] [转账:金额] [表情:名称]');
+    buffer.writeln('例如：[图片:我的猫] 或 [转账:6.66]');
+    buffer.writeln('别老用，偶尔用就行。');
     return buffer.toString();
   }
 }

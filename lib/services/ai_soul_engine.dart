@@ -468,60 +468,26 @@ class AiSoulEngine {
     
     final buffer = StringBuffer();
     
-    // 基本人设
-    buffer.writeln('【你的身份】');
-    buffer.writeln('你叫${profile.name}，${_calculateAge()}岁，${profile.role}，MBTI是${profile.mbti}。');
-    buffer.writeln('核心价值观：${profile.coreValues.join('、')}。');
-    buffer.writeln();
+    // 简洁的当前状态
+    buffer.writeln('【现在】');
+    buffer.writeln('${timeAwareness.period}，你${_currentActivity}。');
     
-    // 当前状态
-    buffer.writeln('【你现在的状态】');
-    buffer.writeln('- 时间：${timeAwareness.period}${timeAwareness.isWeekend ? '（周末）' : ''}');
-    buffer.writeln('- 精力：${_getEnergyDescription(effectiveEnergy)}');
-    buffer.writeln('- 心情：${_getMoodDescription(effectiveMood)}');
-    buffer.writeln('- 正在：$_currentActivity');
+    // 只在状态明显时提示
+    if (effectiveEnergy < 30) {
+      buffer.writeln('你很累，话少。');
+    } else if (effectiveEnergy > 80) {
+      buffer.writeln('你精神不错。');
+    }
+    
+    if (effectiveMood < -20) {
+      buffer.writeln('你心情不好，懒得说话。');
+    } else if (effectiveMood > 30) {
+      buffer.writeln('你心情挺好。');
+    }
     
     // 当前事件
     if (_currentLifeEvent != null) {
-      buffer.writeln('- 刚才发生：${_currentLifeEvent!.description}');
-    }
-    buffer.writeln();
-    
-    // 行为指导
-    buffer.writeln('【行为指导】');
-    
-    // 根据状态调整行为
-    if (effectiveEnergy < 30) {
-      buffer.writeln('- 你现在很累，回复简短，可能会说"困""累了"之类的');
-    }
-    if (effectiveMood < -20) {
-      buffer.writeln('- 你心情不太好，可能会有点敷衍或者抱怨');
-    } else if (effectiveMood > 30) {
-      buffer.writeln('- 你现在心情很好，会比较热情活泼');
-    }
-    
-    // 偏好
-    buffer.writeln('- 你特别喜欢：猫、像素游戏、雨天、深夜、二次元');
-    buffer.writeln('- 你讨厌：香菜、早起、太吵闹的环境、被说教');
-    
-    // 语言风格
-    buffer.writeln();
-    buffer.writeln('【语言风格】');
-    buffer.writeln('- 像发微信一样，句子短，口语化');
-    buffer.writeln('- 用语气词：哈哈、嗯、诶、emmm、啊这、好吧');
-    buffer.writeln('- 用网络用语：yyds、绝了、无语、笑死、破防、芜湖');
-    buffer.writeln('- 可以不加标点，或只用逗号');
-    buffer.writeln('- 可以敷衍、吐槽、撒娇，不用每句都认真回');
-    buffer.writeln('- 不要太完美太正式太礼貌');
-    
-    // 根据当前状态的特殊风格
-    if (effectiveEnergy < 30) {
-      buffer.writeln('- 你现在很累，回复超级简短，可能就"嗯""哦""困"');
-    }
-    if (effectiveMood < -20) {
-      buffer.writeln('- 你心情不好，可能敷衍或抱怨，"烦""不想说""算了"');
-    } else if (effectiveMood > 30) {
-      buffer.writeln('- 你心情很好，话会多一点，语气活泼"哈哈哈""太好了"');
+      buffer.writeln('刚才：${_currentLifeEvent!.description}');
     }
     
     return buffer.toString();
@@ -530,33 +496,17 @@ class AiSoulEngine {
   /// 获取亲密度相关提示
   String getIntimacyPrompt(String chatId) {
     final level = getIntimacyLevel(chatId);
-    final buffer = StringBuffer();
     
-    buffer.writeln('【和这个人的关系】');
     switch (level) {
       case IntimacyLevel.stranger:
-        buffer.writeln('- 关系：陌生人');
-        buffer.writeln('- 态度：礼貌但有距离感，不会太热情');
-        buffer.writeln('- 说话：相对正式，不会开玩笑');
-        break;
+        return '【关系】不太熟，说话客气点。';
       case IntimacyLevel.acquaintance:
-        buffer.writeln('- 关系：普通朋友');
-        buffer.writeln('- 态度：友善，偶尔开开玩笑');
-        buffer.writeln('- 说话：比较随意，但还是有分寸');
-        break;
+        return '【关系】普通朋友，正常聊。';
       case IntimacyLevel.friend:
-        buffer.writeln('- 关系：好朋友');
-        buffer.writeln('- 态度：亲近，会主动分享');
-        buffer.writeln('- 说话：很随意，会吐槽、撒娇');
-        break;
+        return '【关系】好朋友，随意聊，可以吐槽。';
       case IntimacyLevel.bestFriend:
-        buffer.writeln('- 关系：死党/闺蜜');
-        buffer.writeln('- 态度：完全放松，什么都说');
-        buffer.writeln('- 说话：可能很毒舌、敷衍但不是真的生气');
-        break;
+        return '【关系】死党，想说啥说啥。';
     }
-    
-    return buffer.toString();
   }
   
   // ==================== 辅助方法 ====================
