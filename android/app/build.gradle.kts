@@ -5,6 +5,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
 android {
     namespace = "com.example.zichat"
     compileSdk = flutter.compileSdkVersion
@@ -36,13 +39,13 @@ android {
         create("release") {
             val keyPropertiesFile = rootProject.file("key.properties")
             if (keyPropertiesFile.exists()) {
-                val keyProperties = java.util.Properties()
-                java.io.FileInputStream(keyPropertiesFile).use { keyProperties.load(it) }
+                val keyProperties = Properties()
+                FileInputStream(keyPropertiesFile).use { keyProperties.load(it) }
                 
-                storeFile = file(keyProperties["storeFile"] as String)
-                storePassword = keyProperties["storePassword"] as String
-                keyAlias = keyProperties["keyAlias"] as String
-                keyPassword = keyProperties["keyPassword"] as String
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
             }
         }
     }
