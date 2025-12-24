@@ -130,117 +130,116 @@ class _PostMomentPageState extends State<PostMomentPage> {
                           ),
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(
-                            _textController.text.trim(),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF07C160), // HTML: background: #07C160
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14, // HTML: padding: 6px 14px
-                            vertical: 6,
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(
+                              _textController.text.trim(),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF07C160),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
+                            minimumSize: const Size(56, 30),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6), // HTML: border-radius: 6px
+                          child: const Text(
+                            '发表',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                        child: const Text(
-                          '发表',
-                          style: TextStyle(
-                            fontSize: 15, // HTML: font-size: 15px
-                            fontWeight: FontWeight.w500, // HTML: font-weight: 500
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Main Content
-                Expanded(
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
+                      ],
                     ),
-                    padding: const EdgeInsets.fromLTRB(
-                      14,
-                      12,
-                      14,
-                      24,
-                    ), // HTML: padding: 12px 14px 24px
-                    children: [
-                      // 文本输入框
-                      TextField(
-                        controller: _textController,
-                        minLines: 3,
-                        maxLines: null,
-                        decoration: const InputDecoration(
-                          hintText: '这一刻的想法...', // HTML: placeholder
-                          hintStyle: TextStyle(
-                            fontSize: 16, // HTML: font-size: 16px
-                            color: Color(0xFFBBBBBB),
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF111111),
-                        ),
-                      ),
-                      const SizedBox(height: 12), // HTML: gap: 12px
-                      // 图片网格
-                      _buildImageGrid(),
-                      const SizedBox(height: 26), // HTML: margin-top: 26px
-                      // 选项列表
-                      Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            top: BorderSide(
-                              color: Color(0xFFF0F0F0), // HTML: border-top: 0.5px solid #f0f0f0
-                              width: 0.5,
-                            ),
-                            bottom: BorderSide(
-                              color:
-                                  Color(0xFFF0F0F0), // HTML: border-bottom: 0.5px solid #f0f0f0
-                              width: 0.5,
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          children: const [
-                            _OptionRow(
-                              icon: 'assets/icon/discover/location.svg',
-                              label: '所在位置',
-                            ),
-                            _OptionRow(
-                              icon: 'assets/icon/discover/at.svg',
-                              label: '提醒谁看',
-                            ),
-                            _OptionRow(
-                              icon:
-                                  'assets/icon/discover/location.svg', // 项目中没有 visible.svg
-                              label: '谁可以看',
-                              value: '公开',
-                              isLast: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
-                ),
-              ],
+                  // Main Content
+                  Expanded(
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(
+                        22,
+                        16,
+                        22,
+                        24,
+                      ),
+                      children: [
+                        // 文本输入框
+                        TextField(
+                          controller: _textController,
+                          minLines: 3,
+                          maxLines: null,
+                          decoration: const InputDecoration(
+                            hintText: '这一刻的想法...',
+                            hintStyle: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFFBBBBBB),
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF111111),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // 图片网格
+                        _buildImageGrid(),
+                        const SizedBox(height: 26),
+                        // 选项列表
+                        Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: Color(0xFFF0F0F0),
+                                width: 0.5,
+                              ),
+                              bottom: BorderSide(
+                                color: Color(0xFFF0F0F0),
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: Column(
+                            children: const [
+                              _OptionRow(
+                                icon: 'assets/icon/discover/location.svg',
+                                label: '所在位置',
+                              ),
+                              _OptionRow(
+                                icon: 'assets/icon/discover/at.svg',
+                                label: '提醒谁看',
+                              ),
+                              _OptionRow(
+                                icon: 'assets/icon/discover/location.svg',
+                                label: '谁可以看',
+                                value: '公开',
+                                isLast: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
-}
 
 class _AddMediaButton extends StatelessWidget {
   const _AddMediaButton({required this.onTap});
@@ -252,34 +251,15 @@ class _AddMediaButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 100,
-        height: 100,
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F7),
-          border: Border.all(
-            color: const Color(0xFFDCDCDC),
-            style: BorderStyle.solid,
-          ),
-          borderRadius: BorderRadius.circular(4),
+          color: const Color(0xFFF2F2F2),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.add_photo_alternate_outlined,
-                size: 32,
-                color: Color(0xFF8A8F99),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '添加图片',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF8A8F99),
-                ),
-              ),
-            ],
+          child: Icon(
+            Icons.add,
+            size: 44,
+            color: Color(0xFF333333),
           ),
         ),
       ),

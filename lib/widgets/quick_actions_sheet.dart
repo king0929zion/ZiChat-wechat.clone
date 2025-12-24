@@ -1,230 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:zichat/constants/app_assets.dart';
 import 'package:zichat/constants/app_colors.dart';
-import 'package:zichat/constants/app_styles.dart';
+import 'package:zichat/pages/add_contacts_page.dart';
 import 'package:zichat/pages/code_scanner_page.dart';
 import 'package:zichat/pages/money_qrcode_page.dart';
 
-/// 显示快速操作弹窗
+/// 显示快速操作弹窗 (仿微信右上角弹出菜单)
 void showQuickActionsSheet(BuildContext context) {
-  showModalBottomSheet<void>(
+  final double statusBarHeight = MediaQuery.of(context).padding.top;
+  final double screenWidth = MediaQuery.of(context).size.width;
+  
+  // 估算右上角加号按钮的位置
+  // Header高度 52, 右边距 12, 按钮宽高 36
+  // 按钮中心垂直位置: statusBarHeight + (52 - 36) / 2
+  const double buttonSize = 36.0;
+  const double rightMargin = 12.0;
+  const double headerHeight = 52.0;
+  
+  final double buttonTop = statusBarHeight + (headerHeight - buttonSize) / 2;
+  final double buttonRight = rightMargin;
+  final double buttonLeft = screenWidth - buttonRight - buttonSize;
+  
+  // 菜单显示在按钮正下方微偏左
+  final RelativeRect position = RelativeRect.fromLTRB(
+    buttonLeft,
+    buttonTop + buttonSize + 5, // 按钮下方 5px
+    buttonRight,
+    0,
+  );
+
+  showMenu<String>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) {
-      return QuickActionsSheet(parentContext: context);
-    },
+    position: position,
+    color: const Color(0xFF4C4C4C),
+    elevation: 4,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+    items: [
+      _buildMenuItem(context, '发起群聊', Icons.chat_bubble_outline, 'group_chat'),
+      _buildMenuItem(context, '添加朋友', Icons.person_add_alt_1, 'add_friend'),
+      _buildMenuItem(context, '扫一扫', Icons.qr_code_scanner, 'scan'),
+      _buildMenuItem(context, '收付款', Icons.account_balance_wallet_outlined, 'money'),
+    ],
+  ).then((value) {
+    if (value == null) return;
+    switch (value) {
+      case 'group_chat':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('发起群聊功能暂未开放')),
+        );
+        break;
+      case 'add_friend':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AddContactsPage()),
+        );
+        break;
+      case 'scan':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CodeScannerPage()),
+        );
+        break;
+      case 'money':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MoneyQrcodePage()),
+        );
+        break;
+    }
+  });
+}
+
+PopupMenuItem<String> _buildMenuItem(
+  BuildContext context,
+  String label,
+  IconData icon,
+  String value,
+) {
+  return PopupMenuItem<String>(
+    value: value,
+    height: 48,
+    padding: EdgeInsets.zero,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 }
 
-/// 快速操作底部弹窗
-class QuickActionsSheet extends StatefulWidget {
-  const QuickActionsSheet({super.key, required this.parentContext});
-
-  final BuildContext parentContext;
-
-  @override
-  State<QuickActionsSheet> createState() => _QuickActionsSheetState();
-}
-
-class _QuickActionsSheetState extends State<QuickActionsSheet>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: AppStyles.animationNormal,
-    );
-    _slideAnimation = Tween<double>(begin: 100.0, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Widget _buildItem({
-    required String label,
-    required String icon,
-    VoidCallback? onTap,
-    int index = 0,
-  }) {
-    Widget leading;
-    if (icon.endsWith('.svg')) {
-      leading = SvgPicture.asset(icon, width: 22, height: 22);
-    } else {
-      leading = ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: Image.asset(icon, width: 22, height: 22, fit: BoxFit.cover),
-      );
-    }
-
-    return _QuickActionItem(
-      label: label,
-      leading: leading,
-      onTap: () {
-        Navigator.of(context).pop();
-        if (onTap != null) {
-          onTap();
-        } else {
-          ScaffoldMessenger.of(widget.parentContext).showSnackBar(
-            SnackBar(
-              content: Text('$label 功能暂未开放'),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          );
-        }
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, _slideAnimation.value),
-          child: Opacity(
-            opacity: _fadeAnimation.value,
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppStyles.radiusLarge),
-          boxShadow: AppStyles.shadowMedium,
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildItem(
-                index: 0,
-                label: '发起群聊',
-                icon: AppAssets.iconPlus,
-              ),
-              _buildItem(
-                index: 1,
-                label: '加入群聊',
-                icon: AppAssets.iconPlus,
-              ),
-              _buildItem(
-                index: 2,
-                label: '扫一扫',
-                icon: 'assets/icon/discover/scan-v2.jpeg',
-                onTap: () {
-                  Navigator.of(widget.parentContext).push(
-                    MaterialPageRoute(builder: (_) => const CodeScannerPage()),
-                  );
-                },
-              ),
-              _buildItem(
-                index: 3,
-                label: '收付款',
-                icon: 'assets/icon/discover/qrcode.svg',
-                onTap: () {
-                  Navigator.of(widget.parentContext).push(
-                    MaterialPageRoute(builder: (_) => const MoneyQrcodePage()),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 快速操作项组件
-class _QuickActionItem extends StatefulWidget {
-  const _QuickActionItem({
-    required this.label,
-    required this.leading,
-    required this.onTap,
-  });
-
-  final String label;
-  final Widget leading;
-  final VoidCallback onTap;
-
-  @override
-  State<_QuickActionItem> createState() => _QuickActionItemState();
-}
-
-class _QuickActionItemState extends State<_QuickActionItem> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: () {
-        HapticFeedback.lightImpact();
-        widget.onTap();
-      },
-      child: AnimatedContainer(
-        duration: AppStyles.animationFast,
-        color: _isPressed ? AppColors.background : AppColors.surface,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              widget.leading,
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: AppStyles.titleSmall,
-                ),
-              ),
-              SvgPicture.asset(
-                AppAssets.iconArrowRight,
-                width: 12,
-                height: 12,
-                colorFilter: const ColorFilter.mode(
-                  AppColors.textSecondary,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

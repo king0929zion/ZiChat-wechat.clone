@@ -270,7 +270,40 @@ class AiChatService {
 
       if (response.statusCode != 200) {
         debugPrint('API Error Response: ${response.body}');
-        throw Exception('API 错误 (${response.statusCode}): ${response.body}');
+        
+        String errorMessage = 'API 错误 (${response.statusCode})';
+        try {
+          // 尝试解析错误详情
+          final errorData = jsonDecode(utf8.decode(response.bodyBytes));
+          if (errorData['error'] != null) {
+            final error = errorData['error'];
+            final msg = error['message']?.toString() ?? '';
+            final code = error['code']?.toString() ?? '';
+            
+            if (response.statusCode == 404) {
+              if (code == 'model_not_found' || msg.contains('model') || msg.contains('does not exist')) {
+                throw Exception('模型不存在: $model，请在设置中检查模型名称');
+              }
+              throw Exception('接口地址 404: 请检查 API URL 是否正确\n实际请求地址: $uri\n(提示: 请在设置中检查是否缺少或多余了版本号，如 /v1)');
+            }
+            
+            if (response.statusCode == 401) {
+              throw Exception('鉴权失败 401: 请检查 API Key 是否正确');
+            }
+            
+            errorMessage = '$msg ($code)';
+          }
+        } catch (e) {
+          if (e is Exception && e.toString().contains('模型不存在')) rethrow;
+          if (e is Exception && e.toString().contains('接口地址')) rethrow;
+          if (e is Exception && e.toString().contains('鉴权失败')) rethrow;
+          // 解析失败，使用原始 body
+          if (response.statusCode == 404) {
+             throw Exception('接口地址 404: 请检查 API URL 是否正确\n实际请求地址: $uri\n(提示: 请在设置中检查是否缺少或多余了版本号，如 /v1)');
+          }
+        }
+        
+        throw Exception(errorMessage);
       }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -305,10 +338,25 @@ class AiChatService {
   }
 
   static Uri _joinUri(String base, String path) {
-    if (base.endsWith('/')) {
-      return Uri.parse('$base$path');
+    String cleanBase = base.trim();
+    if (cleanBase.endsWith('/')) {
+      cleanBase = cleanBase.substring(0, cleanBase.length - 1);
     }
-    return Uri.parse('$base/$path');
+
+  static Uri _joinUri(String base, String path) {
+    String cleanBase = base.trim();
+    if (cleanBase.endsWith('/')) {
+      cleanBase = cleanBase.substring(0, cleanBase.length - 1);
+    }
+
+    // 1. 如果用户填写的 URL 已经包含了具体的 endpoint 路径
+    if (cleanBase.endsWith(path)) {
+      return Uri.parse(cleanBase);
+    }
+
+    // 2. 直接拼接，不再自动补全 /v1，以支持 v2、v1beta 或无版本号的 API
+    // 用户需要在设置中填写完整的 Base URL (例如 https://api.openai.com/v1)
+    return Uri.parse('$cleanBase/$path');
   }
 }
 
