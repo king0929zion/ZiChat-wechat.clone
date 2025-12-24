@@ -58,7 +58,50 @@ class _ApiEditPageState extends State<ApiEditPage> {
     super.dispose();
   }
 
-// ... _detectModels stays same ...
+  Future<void> _detectModels() async {
+    final baseUrl = _baseUrlController.text.trim();
+    final apiKey = _apiKeyController.text.trim();
+
+    if (baseUrl.isEmpty || apiKey.isEmpty) {
+      setState(() {
+        _error = '请先填写 API 地址和密钥';
+      });
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+    setState(() {
+      _detecting = true;
+      _error = null;
+    });
+
+    try {
+      final models = await ModelDetectorService.detectModels(
+        baseUrl: baseUrl,
+        apiKey: apiKey,
+      );
+      if (mounted) {
+        setState(() {
+          _detectedModels = models;
+          _detecting = false;
+          // Auto select first detected model if not set
+          if (_detectedModels.isNotEmpty && _selectedModel == null) {
+            _selectedModel = _detectedModels.first;
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('检测到 ${models.length} 个可用模型')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _detecting = false;
+          _error = e.toString();
+        });
+      }
+    }
+  }
 
   void _save() {
     final name = _nameController.text.trim();
@@ -98,7 +141,178 @@ class _ApiEditPageState extends State<ApiEditPage> {
     Navigator.of(context).pop(config);
   }
 
-// ... build ... section ...
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: SvgPicture.asset(
+            AppAssets.iconGoBack,
+            width: 12,
+            height: 20,
+            colorFilter: const ColorFilter.mode(
+              AppColors.textPrimary,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: Text(
+          _isEdit ? '编辑 API' : '添加 API',
+          style: AppStyles.titleLarge,
+        ),
+        centerTitle: true,
+        actions: [
+          Center(
+            child: TextButton(
+              onPressed: _detecting ? null : _save,
+              child: _detecting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text(
+                      '保存',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.primary,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: ListView(
+              padding: const EdgeInsets.only(top: 12, bottom: 20),
+              children: [
+                _buildSection(
+                  title: '基本信息',
+                  children: [
+                    _InputTile(
+                      label: '名称',
+                      placeholder: '例如: OpenAI、DeepSeek',
+                      controller: _nameController,
+                    ),
+                    _InputTile(
+                      label: 'API 地址',
+                      placeholder: 'https://api.openai.com/v1',
+                      controller: _baseUrlController,
+                    ),
+                    _InputTile(
+                      label: 'API 密钥',
+                      placeholder: 'sk-...',
+                      controller: _apiKeyController,
+                      obscureText: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildDetectSection(),
+                if (_detectedModels.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildModelsSection(),
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  _buildErrorCard(),
+                ],
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSection({required String title, required List<Widget> children}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text(title, style: AppStyles.caption),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+            ),
+            child: Column(children: children),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetectSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text('可用模型', style: AppStyles.bodyMedium),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                '点击按钮自动检测该 API 支持的模型列表',
+                style: AppStyles.caption,
+              ),
+            ),
+            const SizedBox(height: 12),
+             Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _detecting ? null : _detectModels,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.textHint,
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  child: _detecting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('检测可用模型'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildModelsSection() {
     return Padding(
