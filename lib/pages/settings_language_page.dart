@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zichat/constants/app_assets.dart';
 import 'package:zichat/constants/app_colors.dart';
-import 'package:zichat/constants/app_styles.dart';
 
-/// 语言设置页面
 class SettingsLanguagePage extends StatefulWidget {
   const SettingsLanguagePage({super.key});
 
@@ -16,14 +13,25 @@ class SettingsLanguagePage extends StatefulWidget {
 
 class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
   static const String _languageKey = 'app_language';
-  String _currentLanguage = 'zh-CN';
+  String _selectedLanguage = 'zh-CN'; // Default
 
-  final Map<String, String> _languages = {
-    'zh-CN': '简体中文',
-    'en': 'English',
-    'ja': '日本語',
-    'ko': '한국어',
-  };
+  // Language code map, compatible with current implementation
+  final List<Map<String, String>> _languages = [
+    {'code': 'system', 'label': '跟随系统'},
+    {'code': 'zh-CN', 'label': '简体中文'},
+    {'code': 'zh-TW', 'label': '繁體中文（台灣）'},
+    {'code': 'zh-HK', 'label': '繁體中文（香港）'},
+    {'code': 'en', 'label': 'English'},
+    {'code': 'id', 'label': 'Bahasa Indonesia'},
+    {'code': 'ms', 'label': 'Bahasa Melayu'},
+    {'code': 'es', 'label': 'Español'},
+    {'code': 'ko', 'label': '한국어'},
+    {'code': 'it', 'label': 'Italiano'},
+    {'code': 'ja', 'label': '日本語'},
+    {'code': 'pt', 'label': 'Português'},
+    {'code': 'ru', 'label': 'Русский'},
+    {'code': 'th', 'label': 'ภาษาไทย'},
+  ];
 
   @override
   void initState() {
@@ -36,98 +44,99 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
     final lang = prefs.getString(_languageKey) ?? 'zh-CN';
     if (mounted) {
       setState(() {
-        _currentLanguage = lang;
+        _selectedLanguage = lang;
       });
     }
   }
 
-  Future<void> _selectLanguage(String langCode) async {
-    HapticFeedback.selectionClick();
+  Future<void> _saveLanguage() async {
+    HapticFeedback.mediumImpact();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_languageKey, langCode);
+    await prefs.setString(_languageKey, _selectedLanguage);
+    
     if (mounted) {
-      setState(() {
-        _currentLanguage = langCode;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已切换到 ${_languages[langCode]}')),
-      );
+       Navigator.of(context).pop(_selectedLanguage);
+       // In a real app, you might trigger an app restart or provider update here
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    const Color bg = Color(0xFFEFEFF4);
+    const Color primarySelectionColor = Color(0xFF07C160);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: SvgPicture.asset(
-            AppAssets.iconGoBack,
+            'assets/icon/common/go-back.svg',
             width: 12,
             height: 20,
             colorFilter: const ColorFilter.mode(
-              AppColors.textPrimary,
+              Color(0xFF1D2129),
               BlendMode.srcIn,
             ),
           ),
         ),
-        title: const Text('语言', style: AppStyles.titleLarge),
+        title: const Text(
+          '多语言',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1D2129),
+          ),
+        ),
         centerTitle: true,
-      ),
-      body: SafeArea(
-        top: false,
-        bottom: true,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: ListView(
-              padding: const EdgeInsets.only(top: 12, bottom: 20),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
-                    ),
-                    child: Column(
-                      children: List.generate(_languages.entries.length, (index) {
-                        final entry = _languages.entries.elementAt(index);
-                        final isSelected = _currentLanguage == entry.key;
-                        final showDivider = index < _languages.entries.length - 1;
-                        return _LanguageTile(
-                          label: entry.value,
-                          selected: isSelected,
-                          showDivider: showDivider,
-                          onTap: () => _selectLanguage(entry.key),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-              ],
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            child: ElevatedButton(
+              onPressed: _saveLanguage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primarySelectionColor,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                minimumSize: const Size(56, 32),
+              ),
+              child: const Text('保存', style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.normal)),
             ),
           ),
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+           children: [
+             for (int i = 0; i < _languages.length; i++)
+               _LanguageItem(
+                 label: _languages[i]['label']!,
+                 isSelected: _languages[i]['code'] == _selectedLanguage,
+                 onTap: () {
+                   setState(() {
+                     _selectedLanguage = _languages[i]['code']!;
+                   });
+                 },
+               ),
+           ],
         ),
       ),
     );
   }
 }
 
-class _LanguageTile extends StatelessWidget {
-  const _LanguageTile({
+class _LanguageItem extends StatelessWidget {
+  const _LanguageItem({
     required this.label,
-    required this.selected,
-    required this.showDivider,
+    required this.isSelected,
     required this.onTap,
   });
 
   final String label;
-  final bool selected;
-  final bool showDivider;
+  final bool isSelected;
   final VoidCallback onTap;
 
   @override
@@ -137,27 +146,29 @@ class _LanguageTile extends StatelessWidget {
       child: Container(
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: showDivider
-            ? const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: AppColors.divider, width: 0.5),
-                ),
-              )
-            : null,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(
+              color: Color(0xFFE5E6EB),
+              width: 0.5,
+            ),
+          ),
+        ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: Text(
-                label,
-                style: AppStyles.titleSmall.copyWith(
-                  color: selected ? AppColors.primary : AppColors.textPrimary,
-                ),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF1D2129),
               ),
             ),
-            if (selected)
+            if (isSelected)
               const Icon(
                 Icons.check,
-                color: AppColors.primary,
+                color: Color(0xFF07C160),
                 size: 20,
               ),
           ],

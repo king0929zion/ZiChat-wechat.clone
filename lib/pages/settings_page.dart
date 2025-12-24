@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/pages/settings_general_page.dart';
+import 'package:zichat/pages/settings_chat_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -86,7 +87,14 @@ class _SettingsBody extends StatelessWidget {
         const _SettingsItem(label: '关怀模式'),
         const _SettingsDivider(),
         const _SettingsItem(label: '通知'),
-        const _SettingsItem(label: '聊天'),
+        _SettingsItem(
+          label: '聊天',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsChatPage()),
+            );
+          },
+        ),
         _SettingsItem(
           label: '通用',
           onTap: () {
