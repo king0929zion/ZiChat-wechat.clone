@@ -53,6 +53,7 @@ class _AiSoulPanelPageState extends State<AiSoulPanelPage> {
     // 尝试AI生成事件
     final aiEvent = await AiSoulEngine.instance.generateAiEvent();
     if (aiEvent != null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('发生了：${aiEvent.description}'),

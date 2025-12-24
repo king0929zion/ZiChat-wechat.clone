@@ -250,7 +250,7 @@ class _AddFriendPageState extends State<AddFriendPage> {
                     ? Image.file(
                         File(_avatarPath!),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildDefaultAvatar(),
+                        errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
                       )
                     : _buildDefaultAvatar(),
               ),

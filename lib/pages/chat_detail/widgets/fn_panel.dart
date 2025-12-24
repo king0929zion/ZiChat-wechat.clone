@@ -262,13 +262,13 @@ class _FnCellState extends State<_FnCell> with SingleTickerProviderStateMixin {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(AppStyles.radiusLarge),
                   border: Border.all(
-                    color: AppColors.border.withOpacity(0.5),
+                    color: AppColors.border.withValues(alpha: 0.5),
                   ),
                   boxShadow: _isPressed
                       ? null
                       : [
                           BoxShadow(
-                            color: AppColors.shadow.withOpacity(0.1),
+                            color: AppColors.shadow.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -324,8 +324,8 @@ class _PageIndicator extends StatelessWidget {
           width: active ? 18 : 6,
           decoration: BoxDecoration(
             color: active
-                ? AppColors.textSecondary.withOpacity(0.6)
-                : AppColors.textSecondary.withOpacity(0.25),
+                ? AppColors.textSecondary.withValues(alpha: 0.6)
+                : AppColors.textSecondary.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(3),
           ),
         );

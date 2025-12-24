@@ -221,14 +221,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
 
-  /// 添加消息的辅助方法
-  void _addMessage(ChatMessage message) {
-    setState(() {
-      _messages.add(message);
-      _allMessages.add(message);
-    });
-  }
-
   /// 处理转账状态变更（用户确认收款）
   void _handleTransferStatusChanged(String messageId, String newStatus) {
     setState(() {
@@ -349,35 +341,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
     _saveMessages();
     _scrollToBottom();
-  }
-
-  List<Map<String, String>> _buildAiHistory() {
-    final List<ChatMessage> textMessages = _messages
-        .where((m) => m.type == 'text' && (m.text?.trim().isNotEmpty ?? false))
-        .toList();
-    if (textMessages.length <= 1) {
-      return <Map<String, String>>[];
-    }
-
-    const int maxHistory = 10;
-    final List<ChatMessage> historyMessages =
-        textMessages.sublist(0, textMessages.length - 1);
-    final int start = historyMessages.length > maxHistory
-        ? historyMessages.length - maxHistory
-        : 0;
-    final List<ChatMessage> recent = historyMessages.sublist(start);
-
-    final List<Map<String, String>> history = <Map<String, String>>[];
-    for (final ChatMessage m in recent) {
-      final String content = (m.text ?? '').trim();
-      if (content.isEmpty) continue;
-      final String role = m.direction == 'out' ? 'user' : 'assistant';
-      history.add(<String, String>{
-        'role': role,
-        'content': content,
-      });
-    }
-    return history;
   }
 
   Future<void> _sendByAi() async {

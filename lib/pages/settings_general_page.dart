@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/pages/ai_config_page.dart';
 import 'package:zichat/pages/api_list_page.dart';
 import 'package:zichat/pages/settings_language_page.dart';
-import 'package:zichat/pages/settings_model_page.dart';
 
 class SettingsGeneralPage extends StatefulWidget {
   const SettingsGeneralPage({super.key});
@@ -15,7 +14,7 @@ class SettingsGeneralPage extends StatefulWidget {
 class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
   bool _landscapeOn = false;
   bool _nfcOn = true;
-  String _language = 'zh-CN';
+  final String _language = 'zh-CN';
 
   String get _languageLabel => _language == 'zh-CN' ? '简体中文' : '英语';
 
@@ -63,7 +62,7 @@ class _SettingsGeneralPageState extends State<SettingsGeneralPage> {
 
   void _openModelSettings() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SettingsModelPage()),
+      MaterialPageRoute(builder: (_) => const ApiListPage()),
     );
   }
 

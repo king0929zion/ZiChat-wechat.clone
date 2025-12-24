@@ -4,8 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:zichat/config/api_secrets.dart';
-import 'package:zichat/config/ai_models.dart';
+import 'package:zichat/storage/api_config_storage.dart';
 
 /// AI 灵魂引擎
 /// 
@@ -370,10 +369,12 @@ class AiSoulEngine {
   
   /// 使用 AI 生成更丰富的事件
   Future<LifeEvent?> generateAiEvent() async {
-    if (!ApiSecrets.hasBuiltInChatApi) return null;
-    
+    if (!ApiConfigStorage.hasConfig()) return null;
+
     try {
-      final model = AiModels.eventGenerationModel;
+      final config = ApiConfigStorage.getActiveConfig();
+      if (config == null || config.models.isEmpty) return null;
+
       final prompt = '''
 你是一个角色扮演助手。请为一个${profile.role}角色生成一个随机的日常生活小事件。
 
@@ -391,13 +392,13 @@ class AiSoulEngine {
 ''';
 
       final response = await http.post(
-        Uri.parse('${ApiSecrets.chatBaseUrl}/chat/completions'),
+        Uri.parse('${config.baseUrl}/chat/completions'),
         headers: {
-          'Authorization': 'Bearer ${ApiSecrets.chatApiKey}',
+          'Authorization': 'Bearer ${config.apiKey}',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'model': model.id,
+          'model': config.models.first,
           'messages': [{'role': 'user', 'content': prompt}],
           'temperature': 0.9,
           'max_tokens': 200,

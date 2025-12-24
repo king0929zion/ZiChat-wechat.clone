@@ -265,7 +265,7 @@ class _VoiceButtonState extends State<_VoiceButton> {
         duration: AppStyles.animationFast,
         height: 38,
         decoration: BoxDecoration(
-          color: _isPressed ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+          color: _isPressed ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
           borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
           border: _isPressed
               ? Border.all(color: AppColors.primary, width: 1.5)
@@ -368,7 +368,7 @@ class _SendButtonState extends State<_SendButton>
             borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),

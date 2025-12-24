@@ -64,10 +64,6 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
     }
   }
 
-  String _highlightText(String text, String keyword) {
-    return text;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,7 +121,7 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search, size: 64, color: AppColors.textHint.withOpacity(0.5)),
+            Icon(Icons.search, size: 64, color: AppColors.textHint.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             const Text(
               '输入关键词搜索聊天记录',
@@ -141,7 +137,7 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off, size: 64, color: AppColors.textHint.withOpacity(0.5)),
+            Icon(Icons.search_off, size: 64, color: AppColors.textHint.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
             Text(
               '未找到 "$_lastQuery" 相关记录',
@@ -155,7 +151,7 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _results.length,
-      separatorBuilder: (_, __) => const Divider(height: 1, indent: 16, endIndent: 16),
+      separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16),
       itemBuilder: (context, index) {
         final result = _results[index];
         return _SearchResultItem(

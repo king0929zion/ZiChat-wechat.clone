@@ -33,7 +33,7 @@ class MessageActionMenu extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -118,7 +118,7 @@ class _ActionButtonState extends State<_ActionButton> {
         duration: AppStyles.animationFast,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: _pressed ? Colors.white.withOpacity(0.1) : Colors.transparent,
+          color: _pressed ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
@@ -183,7 +183,7 @@ class MessageActionOverlay {
             child: GestureDetector(
               onTap: dismiss,
               child: Container(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
               ),
             ),
           ),

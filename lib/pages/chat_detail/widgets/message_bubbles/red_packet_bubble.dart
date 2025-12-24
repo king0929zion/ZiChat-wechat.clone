@@ -92,8 +92,8 @@ class _RedPacketBubbleState extends State<RedPacketBubble>
                 gradient: LinearGradient(
                   colors: _isOpened
                       ? [
-                          AppColors.redPacketStart.withOpacity(0.6),
-                          AppColors.redPacketEnd.withOpacity(0.6),
+                          AppColors.redPacketStart.withValues(alpha: 0.6),
+                          AppColors.redPacketEnd.withValues(alpha: 0.6),
                         ]
                       : [AppColors.redPacketStart, AppColors.redPacketEnd],
                   begin: Alignment.topLeft,
@@ -103,7 +103,7 @@ class _RedPacketBubbleState extends State<RedPacketBubble>
                     ? null
                     : [
                         BoxShadow(
-                          color: AppColors.redPacketEnd.withOpacity(0.3),
+                          color: AppColors.redPacketEnd.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -145,7 +145,7 @@ class _RedPacketBubbleState extends State<RedPacketBubble>
                     _isOpened ? '已领取' : status,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textWhite.withOpacity(0.7),
+                      color: AppColors.textWhite.withValues(alpha: 0.7),
                     ),
                   ),
                 ],

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
-import 'package:zichat/models/friend.dart';
 import 'package:zichat/pages/chat_detail/chat_detail_page.dart';
 import 'package:zichat/services/chat_event_manager.dart';
 import 'package:zichat/storage/friend_storage.dart';
@@ -214,7 +213,8 @@ class _ChatListItemState extends State<_ChatListItem>
     
     // 获取主动消息
     final pendingMessage = ChatEventManager.instance.getPendingMessage(widget.chat.id);
-    
+
+    if (!mounted) return;
     await Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
@@ -266,9 +266,11 @@ class _ChatListItemState extends State<_ChatListItem>
         transitionDuration: const Duration(milliseconds: 300),
       ),
     );
-    
+
     // 返回时刷新列表
-    widget.onChatUpdated?.call();
+    if (mounted) {
+      widget.onChatUpdated?.call();
+    }
   }
 
   @override

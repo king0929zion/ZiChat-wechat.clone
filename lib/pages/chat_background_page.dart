@@ -86,7 +86,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
   Future<void> _setColorBackground(Color color) async {
     HapticFeedback.selectionClick();
     // 使用颜色值作为背景标识
-    final colorString = 'color:${color.value}';
+    final colorString = 'color:${color.toARGB32()}';
     await ChatBackgroundStorage.setBackground(widget.chatId, colorString);
     setState(() {
       _currentBackground = colorString;
@@ -166,7 +166,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
             : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -228,7 +228,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.photo_library, color: AppColors.primary),
@@ -252,7 +252,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
       spacing: 12,
       runSpacing: 12,
       children: _presetColors.map((color) {
-        final isSelected = _currentBackground == 'color:${color.value}';
+        final isSelected = _currentBackground == 'color:${color.toARGB32()}';
         return GestureDetector(
           onTap: () => _setColorBackground(color),
           child: Container(
@@ -265,7 +265,7 @@ class _ChatBackgroundPageState extends State<ChatBackgroundPage> {
                   ? Border.all(color: AppColors.primary, width: 3)
                   : Border.all(color: AppColors.border),
               boxShadow: isSelected
-                  ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 8)]
+                  ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 8)]
                   : null,
             ),
             child: isSelected

@@ -194,7 +194,7 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
       ),
       child: ListView.separated(
         itemCount: _results.length,
-        separatorBuilder: (_, __) => const Divider(
+        separatorBuilder: (context, index) => const Divider(
           height: 0,
           color: AppColors.divider,
         ),

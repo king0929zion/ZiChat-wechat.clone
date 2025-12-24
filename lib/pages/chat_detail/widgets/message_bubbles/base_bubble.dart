@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
 
 /// 基础气泡组件（带箭头）
@@ -76,7 +75,6 @@ class _TappableBubbleState extends State<TappableBubble>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
 
   @override
   void initState() {
@@ -98,19 +96,16 @@ class _TappableBubbleState extends State<TappableBubble>
 
   void _handleTapDown(TapDownDetails details) {
     if (!widget.enabled) return;
-    setState(() => _isPressed = true);
     _controller.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
     if (!widget.enabled) return;
-    setState(() => _isPressed = false);
     _controller.reverse();
   }
 
   void _handleTapCancel() {
     if (!widget.enabled) return;
-    setState(() => _isPressed = false);
     _controller.reverse();
   }
 

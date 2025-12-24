@@ -26,10 +26,10 @@ class _MoneyQrcodePageState extends State<MoneyQrcodePage> {
     String val = raw.replaceAll(RegExp(r'[^0-9.]'), '');
     final parts = val.split('.');
     if (parts.length > 2) {
-      val = parts[0] + '.' + parts.sublist(1).join('');
+      val = '${parts[0]}.${parts.sublist(1).join('')}';
     }
     if (parts.length > 1 && parts[1].length > 2) {
-      val = parts[0] + '.' + parts[1].substring(0, 2);
+      val = '${parts[0]}.${parts[1].substring(0, 2)}';
     }
     if (val != _controller.text) {
       final selectionIndex = val.length;

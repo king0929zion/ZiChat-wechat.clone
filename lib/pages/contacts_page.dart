@@ -346,67 +346,6 @@ class _ContactsSectionHeader extends StatelessWidget {
   }
 }
 
-class _ContactsListItem extends StatelessWidget {
-  const _ContactsListItem({
-    required this.name,
-    required this.avatar,
-    this.showDivider = true,
-  });
-
-  final String name;
-  final String avatar;
-  final bool showDivider;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      child: SizedBox(
-        height: 56,
-        child: Row(
-          children: [
-            const SizedBox(width: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Image.asset(
-                avatar,
-                width: 42,
-                height: 42,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Container(
-                alignment: Alignment.centerLeft,
-                decoration: showDivider
-                    ? const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Color(0xFFE5E6EB),
-                            width: 0.5,
-                          ),
-                        ),
-                      )
-                    : null,
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    color: Color(0xFF1D2129),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CardEntry {
   const _CardEntry({required this.text, required this.image});
   final String text;
