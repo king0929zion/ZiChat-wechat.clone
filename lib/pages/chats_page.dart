@@ -41,7 +41,7 @@ class _ChatsPageState extends State<ChatsPage> {
   void _loadChats() {
     // 加载自定义好友
     final friends = FriendStorage.getAllFriends();
-    
+
     // 转换为聊天列表项
     final friendChats = friends.map((f) => _ChatItemData(
       id: f.id,
@@ -54,10 +54,10 @@ class _ChatsPageState extends State<ChatsPage> {
       isAiFriend: true,
       prompt: f.prompt,
     )).toList();
-    
-    // 合并预设聊天和自定义好友
-    final allChats = [...friendChats, ..._defaultChats];
-    
+
+    // 添加默认好友（如果没有自定义好友）
+    final allChats = friendChats.isEmpty ? [_defaultChat] : friendChats;
+
     // 按最后消息时间排序（有消息的排前面）
     allChats.sort((a, b) {
       if (a.latestTime == b.latestTime) return 0;
@@ -65,7 +65,7 @@ class _ChatsPageState extends State<ChatsPage> {
       if (b.latestTime == '开始聊天吧') return -1;
       return 0; // 保持原顺序
     });
-    
+
     setState(() {
       _chatList = allChats;
     });
@@ -408,7 +408,7 @@ class _ChatAvatar extends StatelessWidget {
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
                 duration: AppStyles.animationNormal,
-                curve: Curves.elasticOut,
+                curve: Curves.easeOutCubic,
                 builder: (context, value, child) {
                   return Transform.scale(
                     scale: value,
@@ -469,51 +469,15 @@ class _ChatItemData {
   final String? prompt;
 }
 
-/// 预设的聊天列表
-const List<_ChatItemData> _defaultChats = [
-  _ChatItemData(
-    id: 'c1',
-    title: '产品例会',
-    avatar: 'assets/group-chat.jpg',
-    latestMessage: '本周 PRD 已同步，记得过目。',
-    latestTime: '09:41',
-    unread: 2,
-    muted: false,
-  ),
-  _ChatItemData(
-    id: 'c2',
-    title: '设计讨论',
-    avatar: 'assets/avatar.png',
-    latestMessage: '收到，晚上补充状态。',
-    latestTime: '昨天',
-    unread: 0,
-    muted: true,
-  ),
-  _ChatItemData(
-    id: 'c3',
-    title: '文件传输助手',
-    avatar: 'assets/avatar-default.jpeg',
-    latestMessage: '图片',
-    latestTime: '昨天',
-    unread: 0,
-    muted: false,
-  ),
-  _ChatItemData(
-    id: 'c4',
-    title: 'Call with Tim',
-    avatar: 'assets/me.png',
-    latestMessage: '[视频通话]',
-    latestTime: '周三',
-    unread: 5,
-    muted: false,
-  ),
-  _ChatItemData(
-    id: 'c5',
-    title: '客户反馈',
-    avatar: 'assets/bella.jpeg',
-    latestMessage: '素材已发，请查收。',
-    latestTime: '周二',
-    unread: 1,
-    muted: false,
-  ),
-];
+/// 默认好友
+const _ChatItemData _defaultChat = _ChatItemData(
+  id: 'default_ai',
+  title: 'AI 助手',
+  avatar: 'assets/avatar-default.jpeg',
+  latestMessage: '开始聊天吧',
+  latestTime: '',
+  unread: 0,
+  muted: false,
+  isAiFriend: true,
+  prompt: '',
+);

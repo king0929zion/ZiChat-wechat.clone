@@ -4,16 +4,16 @@ import 'package:zichat/services/image_gen_service.dart';
 /// AI 工具服务
 /// 
 /// 支持的工具：
-/// - image_gen(prompt) - AI 生成图片
-/// - transfer(amount) - 发起转账
-/// - emoji(name) - 发送表情
+/// - `image_gen(prompt)` - AI 生成图片
+/// - `transfer(amount)` - 发起转账
+/// - `emoji(name)` - 发送表情
 /// 
-/// 调用格式：<tool>工具名(参数)</tool>
+/// 调用格式：`<tool>工具名(参数)</tool>`
 class AiToolsService {
   static final _random = math.Random();
   
   /// 解析 AI 回复中的工具调用
-  /// 格式: <tool>tool_name(param)</tool>
+  /// 格式: `<tool>tool_name(param)</tool>`
   static List<AiToolCall> parseToolCalls(String response) {
     final calls = <AiToolCall>[];
     

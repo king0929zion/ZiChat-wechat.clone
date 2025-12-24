@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:zichat/config/api_secrets.dart';
@@ -37,16 +38,15 @@ class AiSoulEngine {
   /// 当前状态
   String _currentActivity = '发呆';
   DateTime _lastInteraction = DateTime.now();
-  DateTime _wakeUpTime = DateTime.now();
+  final DateTime _wakeUpTime = DateTime.now();
   bool _isAsleep = false;
   
   /// 当前生活事件
   LifeEvent? _currentLifeEvent;
-  List<LifeEvent> _todayEvents = [];
+  final List<LifeEvent> _todayEvents = [];
   
   /// 记忆系统
   final List<Memory> _shortTermMemory = [];
-  Box<String>? _longTermMemoryBox;
   
   /// 亲密度系统 (每个联系人独立)
   final Map<String, double> _intimacyLevels = {};
@@ -61,13 +61,6 @@ class AiSoulEngine {
     '说教': -2, '敷衍': -2,
   };
   
-  /// 秘密系统
-  final List<String> _secrets = [
-    '其实有时候会假装忙来逃避聊天',
-    '收藏了很多奇怪的表情包但从来不发',
-    '偶尔会偷偷看用户的朋友圈',
-  ];
-  
   // ==================== 初始化 ====================
   
   Timer? _stateTimer;
@@ -78,12 +71,11 @@ class AiSoulEngine {
     if (_initialized) return;
     
     try {
-      _longTermMemoryBox = await Hive.openBox<String>('ai_long_term_memory');
       await _loadState();
       _startBackgroundTasks();
       _initialized = true;
     } catch (e) {
-      print('AI Soul Engine init error: $e');
+      debugPrint('AI Soul Engine init error: $e');
     }
   }
   
@@ -111,7 +103,7 @@ class AiSoulEngine {
         data.forEach((k, v) => _intimacyLevels[k] = (v as num).toDouble());
       }
     } catch (e) {
-      print('Load state error: $e');
+      debugPrint('Load state error: $e');
     }
   }
   
@@ -126,7 +118,7 @@ class AiSoulEngine {
       }));
       await box.put('intimacy_levels', jsonEncode(_intimacyLevels));
     } catch (e) {
-      print('Save state error: $e');
+      debugPrint('Save state error: $e');
     }
   }
   
@@ -312,7 +304,6 @@ class AiSoulEngine {
   
   List<LifeEvent> _getAvailableEvents() {
     final hour = DateTime.now().hour;
-    final timeAwareness = getTimeAwareness();
     
     final allEvents = <LifeEvent>[
       // 日常事件
@@ -433,7 +424,7 @@ class AiSoulEngine {
         }
       }
     } catch (e) {
-      print('Generate AI event error: $e');
+      debugPrint('Generate AI event error: $e');
     }
     return null;
   }
@@ -470,7 +461,7 @@ class AiSoulEngine {
     
     // 简洁的当前状态
     buffer.writeln('【现在】');
-    buffer.writeln('${timeAwareness.period}，你${_currentActivity}。');
+    buffer.writeln('${timeAwareness.period}，你$_currentActivity。');
     
     // 只在状态明显时提示
     if (effectiveEnergy < 30) {
@@ -510,33 +501,6 @@ class AiSoulEngine {
   }
   
   // ==================== 辅助方法 ====================
-  
-  int _calculateAge() {
-    final birth = DateTime.parse(profile.birthDate);
-    final now = DateTime.now();
-    int age = now.year - birth.year;
-    if (now.month < birth.month || 
-        (now.month == birth.month && now.day < birth.day)) {
-      age--;
-    }
-    return age;
-  }
-  
-  String _getEnergyDescription(double energy) {
-    if (energy >= 80) return '精力充沛';
-    if (energy >= 60) return '状态不错';
-    if (energy >= 40) return '有点累';
-    if (energy >= 20) return '很疲惫';
-    return '快没电了';
-  }
-  
-  String _getMoodDescription(double mood) {
-    if (mood >= 30) return '心情很好';
-    if (mood >= 10) return '还不错';
-    if (mood >= -10) return '平静';
-    if (mood >= -30) return '有点烦';
-    return '心情很差';
-  }
   
   bool _containsAny(String text, List<String> keywords) {
     return keywords.any((k) => text.contains(k));

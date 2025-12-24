@@ -444,12 +444,12 @@ class _ToggleSwitch extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: const Color.fromRGBO(0, 0, 0, 0.15),
                   offset: const Offset(0, 2),
                   blurRadius: 4,
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: const Color.fromRGBO(0, 0, 0, 0.1),
                   offset: const Offset(0, 0),
                   blurRadius: 1,
                 ),

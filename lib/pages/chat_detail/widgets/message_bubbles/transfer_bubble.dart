@@ -15,10 +15,12 @@ class TransferBubble extends StatefulWidget {
     super.key,
     required this.message,
     required this.isOutgoing,
+    this.onStatusChanged,
   });
 
   final ChatMessage message;
   final bool isOutgoing;
+  final void Function(String messageId, String newStatus)? onStatusChanged;
 
   @override
   State<TransferBubble> createState() => _TransferBubbleState();
@@ -43,16 +45,30 @@ class _TransferBubbleState extends State<TransferBubble>
     super.dispose();
   }
 
-  void _handleTap(BuildContext context) {
+  void _handleTap(BuildContext context) async {
     HapticFeedback.mediumImpact();
     
-    Navigator.of(context).push(
+    final rawStatus = widget.message.status ?? '';
+    final isAlreadyReceived = rawStatus.toLowerCase().contains('accepted') ||
+        rawStatus.contains('已收');
+    
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(
         builder: (_) => TransferReceivePage(
           amount: widget.message.amount ?? '0.00',
+          messageId: widget.message.id,
+          isAlreadyReceived: isAlreadyReceived,
         ),
       ),
     );
+    
+    // 如果收款成功，通知父组件更新状态
+    if (result != null && result['received'] == true) {
+      final messageId = result['messageId'] as String?;
+      if (messageId != null && widget.onStatusChanged != null) {
+        widget.onStatusChanged!(messageId, '已收款');
+      }
+    }
   }
 
   @override

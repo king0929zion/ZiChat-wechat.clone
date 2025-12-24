@@ -1,8 +1,9 @@
 /// API 密钥配置
 class ApiSecrets {
-  // 对话 API (iflow)
-  static const String chatApiKey = 'sk-46ecb698fa0a80811a463cf78149fc9c';
-  static const String chatBaseUrl = 'https://apis.iflow.cn/v1';
+  // 对话 API (MegaLLM OpenAI 兼容)
+  static const String chatApiKey =
+      'sk-mega-e49c9cc780022c8a8b0fb247e0aa2a2ee772c44df32219170d45429a0d08a3bc';
+  static const String chatBaseUrl = 'https://ai.megallm.io/v1';
   
   // 图像生成 API (ModelScope)
   static const String imageApiKey = 'ms-a2995d2b-3843-456a-83fc-3c813e696b08';

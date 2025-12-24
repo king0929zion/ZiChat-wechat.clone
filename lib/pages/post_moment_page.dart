@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
 
 class PostMomentPage extends StatefulWidget {
   const PostMomentPage({super.key});
@@ -10,11 +12,80 @@ class PostMomentPage extends StatefulWidget {
 
 class _PostMomentPageState extends State<PostMomentPage> {
   final TextEditingController _textController = TextEditingController();
+  final List<String> _selectedImages = []; // 用户选择的图片路径
+  static const int _maxImages = 9; // 最多9张图片
 
   @override
   void dispose() {
     _textController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    if (_selectedImages.length >= _maxImages) {
+      _showSimpleSnackBar(context, '最多只能选择 $_maxImages 张图片');
+      return;
+    }
+
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      imageQuality: 85,
+    );
+
+    if (image != null && mounted) {
+      setState(() {
+        _selectedImages.add(image.path);
+      });
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+  }
+
+  Widget _buildImageGrid() {
+    // 如果没有图片，只显示添加按钮
+    if (_selectedImages.isEmpty) {
+      return SizedBox(
+        height: 100,
+        child: Row(
+          children: [
+            _AddMediaButton(onTap: _pickImage),
+          ],
+        ),
+      );
+    }
+
+    // 有图片时显示网格
+    final List<Widget> children = [];
+    
+    // 添加已选择的图片
+    for (int i = 0; i < _selectedImages.length; i++) {
+      children.add(
+        _SelectedMediaItem(
+          imagePath: _selectedImages[i],
+          onRemove: () => _removeImage(i),
+        ),
+      );
+    }
+    
+    // 如果还没有达到最大数量，添加"添加"按钮
+    if (_selectedImages.length < _maxImages) {
+      children.add(_AddMediaButton(onTap: _pickImage));
+    }
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      children: children,
+    );
   }
 
   @override
@@ -122,22 +193,7 @@ class _PostMomentPageState extends State<PostMomentPage> {
                       ),
                       const SizedBox(height: 12), // HTML: gap: 12px
                       // 图片网格
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 8, // HTML: gap: 8px
-                        mainAxisSpacing: 8,
-                        children: const [
-                          _MediaItem(
-                            image: 'assets/icon/discover/top-stories.jpeg',
-                          ),
-                          _MediaItem(image: 'assets/avatar-default.jpeg'),
-                          _MediaItem(image: 'assets/bella.jpeg'),
-                          _MediaItem(image: 'assets/icon/discover/games.jpeg'),
-                          _AddMediaButton(),
-                        ],
-                      ),
+                      _buildImageGrid(),
                       const SizedBox(height: 26), // HTML: margin-top: 26px
                       // 选项列表
                       Container(
@@ -186,51 +242,110 @@ class _PostMomentPageState extends State<PostMomentPage> {
   }
 }
 
-class _MediaItem extends StatelessWidget {
-  const _MediaItem({required this.image});
+class _AddMediaButton extends StatelessWidget {
+  const _AddMediaButton({required this.onTap});
 
-  final String image;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(2), // HTML: border-radius: 2px
-      child: Image.asset(
-        image,
-        fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F7F7),
+          border: Border.all(
+            color: const Color(0xFFDCDCDC),
+            style: BorderStyle.solid,
+          ),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_photo_alternate_outlined,
+                size: 32,
+                color: Color(0xFF8A8F99),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '添加图片',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF8A8F99),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _AddMediaButton extends StatelessWidget {
-  const _AddMediaButton({super.key});
+/// 已选择的图片项（可删除）
+class _SelectedMediaItem extends StatelessWidget {
+  const _SelectedMediaItem({
+    required this.imagePath,
+    required this.onRemove,
+  });
+
+  final String imagePath;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        _showSimpleSnackBar(context, '图片选择功能暂未开放');
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F7), // HTML: background: #f7f7f7
-          border: Border.all(
-            color: const Color(0xFFDCDCDC), // HTML: border: 1px dashed #dcdcdc
-            style: BorderStyle.solid, // Flutter 不支持虚线，用实线代替
-          ),
-          borderRadius: BorderRadius.circular(2),
-        ),
-        child: const Center(
-          child: Text(
-            '+',
-            style: TextStyle(
-              fontSize: 28, // HTML: font-size: 28px
-              color: Color(0xFF8A8F99), // HTML: color: #8a8f99
+    return Stack(
+      children: [
+        // 图片
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Image.file(
+              File(imagePath),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: const Color(0xFFF0F0F0),
+                  child: const Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: Color(0xFF8A8F99),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
-      ),
+        // 删除按钮
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(0, 0, 0, 0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.close,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

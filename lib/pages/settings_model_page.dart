@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:zichat/config/api_secrets.dart';
 import 'package:zichat/config/ai_models.dart';
 import 'package:zichat/constants/app_colors.dart';
-import 'package:zichat/constants/app_styles.dart';
 import 'package:zichat/storage/model_selection_storage.dart';
 
 /// AI 模型选择设置页面
@@ -185,7 +184,7 @@ class _SettingsModelPageState extends State<SettingsModelPage> {
       trailing: Switch(
         value: value,
         onChanged: enabled ? onChanged : null,
-        activeColor: AppColors.primary,
+        activeTrackColor: AppColors.primary,
       ),
     );
   }

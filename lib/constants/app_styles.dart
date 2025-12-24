@@ -85,8 +85,8 @@ class AppStyles {
 
   // 动画曲线
   static const Curve curveDefault = Curves.easeOutCubic;
-  static const Curve curveSpring = Curves.elasticOut;
-  static const Curve curveBounce = Curves.bounceOut;
+  static const Curve curveSpring = Curves.easeOutCubic;
+  static const Curve curveBounce = Curves.easeOutCubic;
 
   // 间距
   static const double spacingXS = 4.0;
@@ -118,4 +118,3 @@ class AppStyles {
     ),
   ];
 }
-

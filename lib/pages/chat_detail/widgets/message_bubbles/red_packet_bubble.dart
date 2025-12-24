@@ -34,12 +34,12 @@ class _RedPacketBubbleState extends State<RedPacketBubble>
     super.initState();
     _bounceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 180),
     );
-    _bounceAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+    _bounceAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
       CurvedAnimation(
         parent: _bounceController,
-        curve: Curves.elasticOut,
+        curve: Curves.easeOutCubic,
       ),
     );
   }

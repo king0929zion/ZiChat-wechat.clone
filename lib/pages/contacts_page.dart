@@ -28,24 +28,14 @@ class _ContactsPageState extends State<ContactsPage> {
       _customFriends = FriendStorage.getAllFriends();
     });
   }
-  
-  Future<void> _openAddFriendPage() async {
-    HapticFeedback.lightImpact();
-    final result = await Navigator.of(context).push<Friend>(
-      MaterialPageRoute(builder: (_) => const AddFriendPage()),
-    );
-    if (result != null) {
-      _loadCustomFriends();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     const Color bg = Color(0xFFEDEDED);
     const Color line = Color(0xFFE5E6EB);
     const Color textSub = Color(0xFF86909C);
-    
-    final totalFriends = _friends.length + _customFriends.length;
+
+    final totalFriends = _customFriends.length;
 
     return Container(
       color: bg,
@@ -135,38 +125,11 @@ class _ContactsPageState extends State<ContactsPage> {
                         }
                       },
                     ),
-                  // 添加更多好友按钮
-                  _AddFriendButton(onTap: _openAddFriendPage),
                 ],
               ),
             ),
             const SizedBox(height: 8),
           ],
-          
-          // 分组联系人
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                // 如果没有自定义好友，显示添加按钮
-                if (_customFriends.isEmpty) ...[
-                  _AddFriendButton(onTap: _openAddFriendPage),
-                  const Divider(height: 0, indent: 68, color: line),
-                ],
-                for (final section in _groupedFriends)
-                  ...[
-                    _ContactsSectionHeader(label: section.initial),
-                    for (int i = 0; i < section.items.length; i++)
-                      _ContactsListItem(
-                        name: section.items[i].displayName,
-                        avatar: section.items[i].avatar,
-                        showDivider: i != section.items.length - 1,
-                      ),
-                  ]
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Center(
@@ -180,62 +143,6 @@ class _ContactsPageState extends State<ContactsPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 添加好友按钮
-class _AddFriendButton extends StatelessWidget {
-  const _AddFriendButton({required this.onTap});
-  
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: SizedBox(
-        height: 56,
-        child: Row(
-          children: [
-            const SizedBox(width: 16),
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(
-                Icons.person_add_outlined,
-                color: AppColors.primary,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                '添加好友',
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Color(0xFF07C160),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            SvgPicture.asset(
-              'assets/icon/common/arrow-right.svg',
-              width: 12,
-              height: 12,
-              colorFilter: const ColorFilter.mode(
-                Colors.black26,
-                BlendMode.srcIn,
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
-        ),
       ),
     );
   }
@@ -506,23 +413,6 @@ class _CardEntry {
   final String image;
 }
 
-class _Friend {
-  const _Friend({
-    required this.displayName,
-    required this.avatar,
-    required this.initial,
-  });
-  final String displayName;
-  final String avatar;
-  final String initial;
-}
-
-class _FriendSection {
-  const _FriendSection({required this.initial, required this.items});
-  final String initial;
-  final List<_Friend> items;
-}
-
 const List<_CardEntry> _cards = [
   _CardEntry(text: '新的朋友', image: 'assets/icon/contacts/new-friend.jpeg'),
   _CardEntry(
@@ -533,36 +423,3 @@ const List<_CardEntry> _cards = [
   _CardEntry(
       text: '企业微信联系人', image: 'assets/icon/contacts/wecom-contacts.jpeg'),
 ];
-
-const List<_Friend> _friends = [
-  _Friend(displayName: '安奕', avatar: 'assets/avatar.png', initial: 'A'),
-  _Friend(displayName: '白茶', avatar: 'assets/avatar-default.jpeg', initial: 'B'),
-  _Friend(displayName: '陈川', avatar: 'assets/bella.jpeg', initial: 'C'),
-  _Friend(displayName: '丁可', avatar: 'assets/me.png', initial: 'D'),
-  _Friend(displayName: '付博', avatar: 'assets/avatar.png', initial: 'F'),
-  _Friend(displayName: '顾深', avatar: 'assets/avatar-default.jpeg', initial: 'G'),
-  _Friend(displayName: '韩叙', avatar: 'assets/avatar.png', initial: 'H'),
-  _Friend(displayName: '金悦', avatar: 'assets/avatar-default.jpeg', initial: 'J'),
-  _Friend(displayName: '刘洛', avatar: 'assets/bella.jpeg', initial: 'L'),
-  _Friend(displayName: '陆一鸣', avatar: 'assets/avatar.png', initial: 'L'),
-  _Friend(displayName: '莫灵', avatar: 'assets/avatar.png', initial: 'M'),
-  _Friend(displayName: '乔木', avatar: 'assets/avatar-default.jpeg', initial: 'Q'),
-  _Friend(displayName: '孙晓', avatar: 'assets/bella.jpeg', initial: 'S'),
-  _Friend(displayName: '唐跃', avatar: 'assets/avatar.png', initial: 'T'),
-  _Friend(displayName: '王析', avatar: 'assets/avatar-default.jpeg', initial: 'W'),
-  _Friend(displayName: '许诺', avatar: 'assets/avatar.png', initial: 'X'),
-  _Friend(displayName: '袁野', avatar: 'assets/avatar-default.jpeg', initial: 'Y'),
-  _Friend(displayName: '张源', avatar: 'assets/avatar.png', initial: 'Z'),
-  _Friend(displayName: '赵城', avatar: 'assets/avatar-default.jpeg', initial: 'Z'),
-];
-
-List<_FriendSection> get _groupedFriends {
-  final Map<String, List<_Friend>> map = {};
-  for (final f in _friends) {
-    map.putIfAbsent(f.initial, () => []).add(f);
-  }
-  final initials = map.keys.toList()..sort();
-  return initials
-      .map((i) => _FriendSection(initial: i, items: map[i]!))
-      .toList();
-}

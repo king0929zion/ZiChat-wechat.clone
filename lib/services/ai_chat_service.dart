@@ -6,8 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:zichat/config/api_secrets.dart';
-import 'package:zichat/config/ai_models.dart';
-import 'package:zichat/services/ai_soul_engine.dart';
 import 'package:zichat/services/ai_tools_service.dart';
 import 'package:zichat/storage/ai_config_storage.dart';
 import 'package:zichat/storage/model_selection_storage.dart';
@@ -94,15 +92,6 @@ class AiChatService {
 
     // 记录用户消息到历史
     _addToHistory(chatId, 'user', userInput);
-    
-    // 触发灵魂引擎状态更新
-    AiSoulEngine.instance.onUserMessage(userInput);
-    
-    // 随机触发生活事件
-    AiSoulEngine.instance.triggerRandomEvent();
-    
-    // 增加亲密度
-    AiSoulEngine.instance.updateIntimacy(chatId, 0.5);
 
     // 内置 API 都是 OpenAI 兼容格式，使用流式输出
     final buffer = StringBuffer();
@@ -172,9 +161,9 @@ class AiChatService {
     
     final raw = buffer.toString();
     
-    // 按反斜线分句
+    // 按 || 分隔成多条消息
     final List<String> parts = raw
-        .split('\\')
+        .split('||')
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
@@ -186,51 +175,35 @@ class AiChatService {
     return parts;
   }
 
-  /// 构建系统提示词 (增强拟人化 + 状态感知)
+  /// 构建系统提示词（简化版）
   static Future<String> _buildSystemPrompt(String chatId, String persona, String? friendPrompt) async {
     final basePrompt = await _getBasePrompt();
-    final contactPrompt = (await AiConfigStorage.loadContactPrompt(chatId)) ?? '';
-    
+
     final buffer = StringBuffer();
-    
+
     // 基础提示词
     if (basePrompt.trim().isNotEmpty) {
       buffer.writeln(basePrompt.trim());
     }
-    
+
     // 好友专属人设（来自添加好友时设置）
     if (friendPrompt != null && friendPrompt.trim().isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('【你的人设】');
+      buffer.writeln('【你的个性化人设】');
       buffer.writeln(friendPrompt.trim());
     }
-    
-    // 加入完整的灵魂引擎状态提示
-    buffer.writeln();
-    buffer.writeln(AiSoulEngine.instance.generateStatePrompt());
-    
-    // 加入亲密度相关提示
-    buffer.writeln();
-    buffer.writeln(AiSoulEngine.instance.getIntimacyPrompt(chatId));
-    
-    // 用户自定义人设
+
+    // 用户自定义全局人设
     if (persona.trim().isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('【额外人设补充】');
+      buffer.writeln('【额外补充】');
       buffer.writeln(persona.trim());
     }
-    
-    // 联系人专属提示词（聊天信息页设置的）
-    if (contactPrompt.trim().isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('【针对这个朋友的特别说明】');
-      buffer.writeln(contactPrompt.trim());
-    }
-    
+
     // 工具使用提示
     buffer.writeln();
     buffer.writeln(AiToolsService.generateToolPrompt());
-    
+
     return buffer.toString().trim();
   }
 
@@ -282,37 +255,6 @@ class AiChatService {
     return (text.length / 2).ceil();
   }
 
-  /// 模拟流式输出 (用于不支持流式的 API)
-  /// 包含自然的打字节奏：快速连打 + 偶尔停顿
-  static Stream<String> _simulateStream(String text) async* {
-    int consecutiveChars = 0;
-    
-    for (int i = 0; i < text.length; i++) {
-      final char = text[i];
-      yield char;
-      consecutiveChars++;
-      
-      // 标点符号后稍微停顿
-      if ('，。！？、；：'.contains(char)) {
-        await Future.delayed(Duration(milliseconds: 150 + _random.nextInt(200)));
-        consecutiveChars = 0;
-      }
-      // 反斜线（分句符）后停顿更长
-      else if (char == '\\') {
-        await Future.delayed(Duration(milliseconds: 300 + _random.nextInt(300)));
-        consecutiveChars = 0;
-      }
-      // 每打几个字后偶尔停顿一下，模拟思考
-      else if (consecutiveChars > 5 && _random.nextDouble() < 0.15) {
-        await Future.delayed(Duration(milliseconds: 100 + _random.nextInt(150)));
-        consecutiveChars = 0;
-      }
-      // 正常打字速度
-      else {
-        await Future.delayed(Duration(milliseconds: 25 + _random.nextInt(35)));
-      }
-    }
-  }
 
   /// OpenAI 流式请求
   static Stream<String> _callOpenAiStream({
@@ -340,8 +282,10 @@ class AiChatService {
     final body = jsonEncode({
       'model': model,
       'messages': messages,
-      'temperature': 0.8,
-      'stream': false,  // 禁用流式输出
+      'temperature': 0.6,
+      'top_p': 0.9,
+      'max_tokens': 4096,
+      'stream': false,
     });
 
     debugPrint('API Request URL: $uri');
@@ -360,7 +304,7 @@ class AiChatService {
         const Duration(seconds: 120),
         onTimeout: () => throw TimeoutException('请求超时'),
       );
-      
+
       debugPrint('API Response Status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
@@ -370,14 +314,22 @@ class AiChatService {
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final content = _extractContent(data);
-      
-      debugPrint('API Response content length: ${content.length}');
-      
+
       if (content.isNotEmpty) {
         yield content;
       }
     } catch (e) {
       debugPrint('API call error: $e');
+      // 识别常见的Web CORS错误
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('failed to fetch') || 
+          errorStr.contains('clientexception') ||
+          errorStr.contains('xmlhttprequest')) {
+        throw Exception('网络请求失败。如果您正在浏览器中运行，请注意：\n'
+            '1. NVIDIA API 不支持浏览器直接调用（CORS限制）\n'
+            '2. 请使用 Android/iOS/桌面端应用\n'
+            '3. 或在"AI配置"中设置支持CORS的自定义API');
+      }
       rethrow;
     }
   }
@@ -407,93 +359,6 @@ class AiChatService {
     return Uri.parse('$base/$path');
   }
 
-  /// Gemini 请求 (非流式)
-  static Future<String> _callGemini({
-    required String baseUrl,
-    required String apiKey,
-    required String model,
-    required String systemPrompt,
-    required String userInput,
-    required List<Map<String, String>> history,
-  }) async {
-    final String cleanedBase =
-        baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
-    final uri = Uri.parse(
-      '$cleanedBase/v1beta/models/$model:generateContent?key=$apiKey',
-    );
-
-    final buffer = StringBuffer();
-    if (systemPrompt.isNotEmpty) {
-      buffer.writeln(systemPrompt.trim());
-      buffer.writeln();
-    }
-
-    // 加入历史对话
-    for (final item in history) {
-      final content = item['content'] ?? '';
-      if (content.isEmpty) continue;
-      final role = item['role'] ?? 'user';
-      final prefix = role == 'assistant' ? '朋友：' : '我：';
-      buffer.writeln('$prefix$content');
-    }
-
-    buffer.writeln('我：$userInput');
-    final promptText = buffer.toString().trim();
-
-    final body = jsonEncode({
-      'contents': [
-        {
-          'parts': [{'text': promptText}],
-        },
-      ],
-      'generationConfig': {
-        'temperature': 0.8,
-      },
-    });
-
-    final resp = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    ).timeout(
-      const Duration(seconds: 60),
-      onTimeout: () => throw TimeoutException('请求超时'),
-    );
-
-    if (resp.statusCode != 200) {
-      throw Exception('Gemini 接口错误(${resp.statusCode}): ${resp.body}');
-    }
-
-    final data = jsonDecode(resp.body) as Map<String, dynamic>;
-    final candidates = data['candidates'] as List<dynamic>?;
-    if (candidates == null || candidates.isEmpty) {
-      throw Exception('Gemini 返回内容为空');
-    }
-
-    final content = candidates.first['content'];
-    if (content is Map<String, dynamic>) {
-      final parts = content['parts'] as List<dynamic>?;
-      if (parts == null || parts.isEmpty) {
-        throw Exception('Gemini 返回内容为空');
-      }
-      final resultBuffer = StringBuffer();
-      for (final p in parts) {
-        if (p is Map<String, dynamic>) {
-          final text = p['text'];
-          if (text != null) {
-            resultBuffer.write(text.toString());
-          }
-        }
-      }
-      final result = resultBuffer.toString();
-      if (result.isEmpty) {
-        throw Exception('Gemini 返回内容为空');
-      }
-      return result;
-    }
-
-    return content.toString();
-  }
 }
 
 /// 历史消息项

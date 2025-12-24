@@ -229,6 +229,23 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
   }
 
+  /// 处理转账状态变更（用户确认收款）
+  void _handleTransferStatusChanged(String messageId, String newStatus) {
+    setState(() {
+      // 更新 _messages 中的转账状态
+      final index = _messages.indexWhere((m) => m.id == messageId);
+      if (index != -1) {
+        _messages[index] = _messages[index].copyWith(status: newStatus);
+      }
+      // 同时更新 _allMessages
+      final allIndex = _allMessages.indexWhere((m) => m.id == messageId);
+      if (allIndex != -1) {
+        _allMessages[allIndex] = _allMessages[allIndex].copyWith(status: newStatus);
+      }
+    });
+    _saveMessages();
+  }
+
   void _toggleVoice() {
     HapticFeedback.selectionClick();
     setState(() {
@@ -454,9 +471,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       // 移除工具标记后的文本
       final cleanText = AiToolsService.removeToolMarkers(filteredText);
       
-      // 按反斜杠分句
+      // 按 || 分隔成多条消息
       final parts = cleanText
-          .split('\\')
+          .split('||')
           .map((e) => e.trim())
           .where((e) => e.isNotEmpty)
           .toList();
@@ -937,6 +954,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       backgroundPath: _backgroundPath,
                       hasMoreMessages: _hasMoreMessages,
                       isLoadingMore: _isLoadingMore,
+                      onTransferStatusChanged: _handleTransferStatusChanged,
                     ),
                   ),
                 ),
@@ -1000,6 +1018,7 @@ class _MessageList extends StatelessWidget {
     this.backgroundPath,
     this.hasMoreMessages = false,
     this.isLoadingMore = false,
+    this.onTransferStatusChanged,
   });
 
   final ScrollController scrollController;
@@ -1008,6 +1027,7 @@ class _MessageList extends StatelessWidget {
   final String? backgroundPath;
   final bool hasMoreMessages;
   final bool isLoadingMore;
+  final void Function(String messageId, String newStatus)? onTransferStatusChanged;
 
   Color _getBackgroundColor() {
     if (backgroundPath == null) return AppColors.backgroundChat;
@@ -1077,6 +1097,7 @@ class _MessageList extends StatelessWidget {
               key: ValueKey(message.id),
               message: message,
               showAnimation: showAnimation,
+              onTransferStatusChanged: onTransferStatusChanged,
             );
           }
           
@@ -1087,6 +1108,7 @@ class _MessageList extends StatelessWidget {
             key: ValueKey(message.id),
             message: message,
             showAnimation: showAnimation,
+            onTransferStatusChanged: onTransferStatusChanged,
           );
         },
       ),

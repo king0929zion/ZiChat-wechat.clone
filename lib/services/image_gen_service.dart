@@ -2,135 +2,101 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:zichat/config/api_secrets.dart';
-import 'package:zichat/config/ai_models.dart';
+import 'package:zichat/storage/model_selection_storage.dart';
 
 /// 图像生成服务
-/// 
-/// 使用 ModelScope API 异步模式生成图片
+/// 支持 ModelScope 等兼容 OpenAI 格式的图像生成 API
 class ImageGenService {
+  /// 检查是否可用
+  static bool get isAvailable => ApiSecrets.hasBuiltInImageApi;
+
   /// 生成图片
-  /// 
-  /// [prompt] 图片描述
-  /// [model] 使用的模型，默认使用内置模型
-  /// 
-  /// 返回图片的 base64 编码，如果失败返回 null
+  /// 返回 base64 编码的图片数据，出错返回 null
   static Future<String?> generateImage({
     required String prompt,
-    ImageModel? model,
+    String? negativePrompt,
+    int? width,
+    int? height,
   }) async {
-    final useModel = model ?? AiModels.defaultImageModel;
-    
-    // 检查 API Key
-    if (!ApiSecrets.hasBuiltInImageApi) {
-      throw Exception('图像生成 API 未配置');
+    if (!isAvailable) {
+      debugPrint('Image generation API not available');
+      return null;
     }
-    
+
     try {
-      // Step 1: 发起异步生成请求
-      final taskId = await _createTask(prompt, useModel.id);
-      debugPrint('Image generation task created: $taskId');
+      final selectedModel = await ModelSelectionStorage.getImageModel();
+      final model = selectedModel.id;
       
-      // Step 2: 轮询等待结果
-      final imageUrl = await _waitForResult(taskId);
-      debugPrint('Image generated: $imageUrl');
+      final uri = Uri.parse('${ApiSecrets.imageBaseUrl}/images/generations');
       
-      // Step 3: 下载图片并转为 base64
-      return await _downloadAndEncode(imageUrl);
+      final body = jsonEncode({
+        'model': model,
+        'prompt': prompt,
+        'n': 1,
+        'size': '${width ?? 512}x${height ?? 512}',
+        'response_format': 'b64_json',
+      });
+
+      debugPrint('Image generation request: $uri');
+      debugPrint('Model: $model, Prompt: $prompt');
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${ApiSecrets.imageApiKey}',
+        },
+        body: body,
+      ).timeout(
+        const Duration(seconds: 120),
+        onTimeout: () => throw Exception('图片生成超时'),
+      );
+
+      debugPrint('Image generation response status: ${response.statusCode}');
+
+      if (response.statusCode != 200) {
+        debugPrint('Image generation error: ${response.body}');
+        return null;
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      
+      // 提取 base64 图片数据
+      final dataList = data['data'] as List<dynamic>?;
+      if (dataList != null && dataList.isNotEmpty) {
+        final first = dataList[0] as Map<String, dynamic>;
+        final b64Json = first['b64_json'] as String?;
+        if (b64Json != null && b64Json.isNotEmpty) {
+          return b64Json;
+        }
+        // 备用：尝试获取 URL
+        final url = first['url'] as String?;
+        if (url != null && url.isNotEmpty) {
+          // 如果返回的是 URL，下载图片并转换为 base64
+          return await _downloadAndConvertToBase64(url);
+        }
+      }
+
+      debugPrint('No image data in response');
+      return null;
     } catch (e) {
       debugPrint('Image generation error: $e');
-      rethrow;
+      return null;
     }
   }
-  
-  /// 创建异步任务
-  static Future<String> _createTask(String prompt, String modelId) async {
-    final url = '${ApiSecrets.imageBaseUrl}/images/generations';
-    
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Authorization': 'Bearer ${ApiSecrets.imageApiKey}',
-        'Content-Type': 'application/json',
-        'X-ModelScope-Async-Mode': 'true',
-      },
-      body: jsonEncode({
-        'model': modelId,
-        'prompt': prompt,
-      }),
-    ).timeout(const Duration(seconds: 30));
-    
-    debugPrint('Create task response: ${response.statusCode} ${response.body}');
-    
-    if (response.statusCode == 200 || response.statusCode == 202) {
-      final data = jsonDecode(response.body);
-      final taskId = data['task_id'] as String?;
-      if (taskId == null || taskId.isEmpty) {
-        throw Exception('未返回 task_id');
-      }
-      return taskId;
-    } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['error']?['message'] ?? '创建任务失败: ${response.statusCode}');
-    }
-  }
-  
-  /// 轮询等待任务完成
-  static Future<String> _waitForResult(String taskId) async {
-    final url = '${ApiSecrets.imageBaseUrl}/tasks/$taskId';
-    
-    const maxAttempts = 60; // 最多等待 5 分钟 (60 * 5秒)
-    
-    for (int i = 0; i < maxAttempts; i++) {
-      // 等待 5 秒后查询
-      await Future.delayed(const Duration(seconds: 5));
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer ${ApiSecrets.imageApiKey}',
-          'X-ModelScope-Task-Type': 'image_generation',
-        },
-      ).timeout(const Duration(seconds: 30));
-      
-      debugPrint('Task status response: ${response.statusCode} ${response.body}');
-      
+
+  /// 从 URL 下载图片并转换为 base64
+  static Future<String?> _downloadAndConvertToBase64(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 60),
+      );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final status = data['task_status'] as String?;
-        
-        if (status == 'SUCCEED') {
-          // 获取图片 URL
-          final outputImages = data['output_images'] as List?;
-          if (outputImages != null && outputImages.isNotEmpty) {
-            return outputImages[0] as String;
-          }
-          throw Exception('生成成功但未返回图片');
-        } else if (status == 'FAILED') {
-          throw Exception('图片生成失败');
-        }
-        
-        // 继续等待 (PENDING, RUNNING 等状态)
-        debugPrint('Task status: $status, waiting...');
-      } else {
-        throw Exception('查询任务状态失败: ${response.statusCode}');
+        return base64Encode(response.bodyBytes);
       }
+    } catch (e) {
+      debugPrint('Failed to download image: $e');
     }
-    
-    throw Exception('图片生成超时');
+    return null;
   }
-  
-  /// 下载图片并转为 base64
-  static Future<String> _downloadAndEncode(String url) async {
-    final response = await http.get(Uri.parse(url)).timeout(
-      const Duration(seconds: 60),
-    );
-    
-    if (response.statusCode == 200) {
-      return base64Encode(response.bodyBytes);
-    }
-    throw Exception('下载图片失败: ${response.statusCode}');
-  }
-  
-  /// 检查服务是否可用
-  static bool get isAvailable => ApiSecrets.hasBuiltInImageApi;
 }

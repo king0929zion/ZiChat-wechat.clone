@@ -14,12 +14,14 @@ class MessageItem extends StatefulWidget {
     this.showAnimation = true,
     this.onDelete,
     this.onQuote,
+    this.onTransferStatusChanged,
   });
 
   final ChatMessage message;
   final bool showAnimation;
   final VoidCallback? onDelete;
   final Function(String)? onQuote;
+  final void Function(String messageId, String newStatus)? onTransferStatusChanged;
 
   @override
   State<MessageItem> createState() => _MessageItemState();
@@ -145,6 +147,7 @@ class _MessageItemState extends State<MessageItem>
           message: widget.message,
           isOutgoing: isOutgoing,
           onLongPress: () => _showActionMenu(context),
+          onTransferStatusChanged: widget.onTransferStatusChanged,
         ),
       ),
     ];
@@ -234,11 +237,13 @@ class _MessageContent extends StatefulWidget {
     required this.message,
     required this.isOutgoing,
     this.onLongPress,
+    this.onTransferStatusChanged,
   });
 
   final ChatMessage message;
   final bool isOutgoing;
   final VoidCallback? onLongPress;
+  final void Function(String messageId, String newStatus)? onTransferStatusChanged;
 
   @override
   State<_MessageContent> createState() => _MessageContentState();
@@ -263,7 +268,11 @@ class _MessageContentState extends State<_MessageContent> {
         bubble = RedPacketBubble(message: widget.message, isOutgoing: widget.isOutgoing);
         break;
       case 'transfer':
-        bubble = TransferBubble(message: widget.message, isOutgoing: widget.isOutgoing);
+        bubble = TransferBubble(
+          message: widget.message,
+          isOutgoing: widget.isOutgoing,
+          onStatusChanged: widget.onTransferStatusChanged,
+        );
         break;
       default:
         bubble = TextBubble(message: widget.message, isOutgoing: widget.isOutgoing);

@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class TransferReceivePage extends StatefulWidget {
-  const TransferReceivePage({super.key, this.amount = '0.01'});
+  const TransferReceivePage({
+    super.key,
+    this.amount = '0.01',
+    this.messageId,
+    this.isAlreadyReceived = false,
+  });
 
   final String amount;
+  final String? messageId;
+  final bool isAlreadyReceived;
 
   @override
   State<TransferReceivePage> createState() => _TransferReceivePageState();
@@ -13,12 +20,16 @@ class TransferReceivePage extends StatefulWidget {
 class _TransferReceivePageState extends State<TransferReceivePage> {
   late final DateTime _transferTime;
   DateTime? _receiveTime;
-  bool _received = false;
+  late bool _received;
 
   @override
   void initState() {
     super.initState();
     _transferTime = DateTime.now();
+    _received = widget.isAlreadyReceived;
+    if (_received) {
+      _receiveTime = DateTime.now();
+    }
   }
 
   @override
@@ -254,8 +265,13 @@ class _TransferReceivePageState extends State<TransferReceivePage> {
       _receiveTime = DateTime.now();
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已确认收款（模拟）')),
+      const SnackBar(content: Text('已确认收款')),
     );
+    // 返回收款成功状态和消息ID
+    Navigator.of(context).pop({
+      'received': true,
+      'messageId': widget.messageId,
+    });
   }
 
   String _formatCnDateTime(DateTime time) {

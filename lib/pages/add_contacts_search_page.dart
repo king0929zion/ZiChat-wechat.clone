@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zichat/constants/app_assets.dart';
+import 'package:zichat/constants/app_colors.dart';
+import 'package:zichat/constants/app_styles.dart';
 
 class AddContactsSearchPage extends StatefulWidget {
   const AddContactsSearchPage({super.key});
@@ -50,44 +54,44 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    const Color bg = Color(0xFFF2F2F2);
-
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: SvgPicture.asset(
+            AppAssets.iconGoBack,
+            width: 12,
+            height: 20,
+            colorFilter: const ColorFilter.mode(
+              AppColors.textPrimary,
+              BlendMode.srcIn,
+            ),
+          ),
+        ),
+        title: const Text('添加朋友', style: AppStyles.titleLarge),
+        centerTitle: true,
+      ),
       body: SafeArea(
-        top: true,
+        top: false,
         bottom: true,
         child: Center(
-          child: Container(
+          child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
-            color: bg,
-            child: Column(
-              children: [
-                _buildHeader(context),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSearchInput(),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '可搜索：手机号、微信号',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF8A8F99),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: _buildResultList(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSearchInput(),
+                  const SizedBox(height: 10),
+                  const Text('可搜索：手机号、微信号', style: AppStyles.caption),
+                  const SizedBox(height: 12),
+                  Expanded(child: _buildResultList()),
+                ],
+              ),
             ),
           ),
         ),
@@ -95,74 +99,36 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      height: 52,
-      color: const Color(0xFFF2F2F2),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            padding: const EdgeInsets.all(8),
-            icon: SvgPicture.asset(
-              'assets/icon/common/go-back.svg',
-              width: 12,
-              height: 20,
-              colorFilter: const ColorFilter.mode(
-                Color(0xFF1D2129),
-                BlendMode.srcIn,
-              ),
-            ),
-          ),
-          const Expanded(
-            child: Center(
-              child: Text(
-                '添加朋友',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1D2129),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(
-            width: 36,
-            height: 36,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSearchInput() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFEDEDED)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
+        border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
           SvgPicture.asset(
-            'assets/icon/common/search.svg',
+            AppAssets.iconSearch,
             width: 16,
             height: 16,
+            colorFilter: const ColorFilter.mode(
+              AppColors.textHint,
+              BlendMode.srcIn,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: _controller,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => HapticFeedback.selectionClick(),
               decoration: const InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
                 hintText: '微信号/手机号',
-                hintStyle: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF8A8F99),
-                ),
+                hintStyle: AppStyles.hint,
               ),
             ),
           ),
@@ -177,9 +143,9 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
     if (!hasInput) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFF0F0F0)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppStyles.radiusLarge),
+          border: Border.all(color: AppColors.border),
         ),
         child: const Align(
           alignment: Alignment.centerLeft,
@@ -189,7 +155,7 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
               '输入手机号或微信号进行搜索',
               style: TextStyle(
                 fontSize: 15,
-                color: Color(0xFF1D1F23),
+                color: AppColors.textPrimary,
               ),
             ),
           ),
@@ -200,9 +166,9 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
     if (_results.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFF0F0F0)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppStyles.radiusLarge),
+          border: Border.all(color: AppColors.border),
         ),
         child: const Align(
           alignment: Alignment.centerLeft,
@@ -212,7 +178,7 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
               '未找到相关用户',
               style: TextStyle(
                 fontSize: 15,
-                color: Color(0xFF1D1F23),
+                color: AppColors.textPrimary,
               ),
             ),
           ),
@@ -222,15 +188,15 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppStyles.radiusLarge),
+        border: Border.all(color: AppColors.border),
       ),
       child: ListView.separated(
         itemCount: _results.length,
         separatorBuilder: (_, __) => const Divider(
           height: 0,
-          color: Color(0xFFF0F0F0),
+          color: AppColors.divider,
         ),
         itemBuilder: (context, index) {
           final user = _results[index];
@@ -239,7 +205,7 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
                   child: Image.asset(
                     user.avatar,
                     width: 44,
@@ -257,7 +223,7 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1D1F23),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -265,7 +231,7 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
                         '微信号：${user.wechatId}',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF8A8F99),
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -280,8 +246,8 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
                   style: TextButton.styleFrom(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    side: const BorderSide(color: Color(0xFF07C160)),
-                    foregroundColor: const Color(0xFF07C160),
+                    side: const BorderSide(color: AppColors.primary),
+                    foregroundColor: AppColors.primary,
                     minimumSize: const Size(0, 0),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
