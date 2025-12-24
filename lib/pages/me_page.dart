@@ -99,153 +99,155 @@ class _MePageState extends State<MePage> {
       avatarProvider = FileImage(File(_profile.avatar));
     }
 
-    return InkWell(
-      onTap: () async {
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const MyProfilePage()),
-        );
-        _loadProfile();
-      },
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(24, 60, 16, 32), // More spacing for status bar
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image(
-                image: avatarProvider,
-                width: 64,
-                height: 64,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Image.asset('assets/me.png', width: 64, height: 64),
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const MyProfilePage()),
+          );
+          _loadProfile();
+        },
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 60, 16, 32), // More spacing for status bar
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image(
+                  image: avatarProvider,
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Image.asset('assets/me.png', width: 64, height: 64),
+                ),
               ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _profile.name,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF111111),
-                      height: 1.1,
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _profile.name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111111),
+                        height: 1.1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '微信号：${_profile.wechatId}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF7F7F7F),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '微信号：${_profile.wechatId}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF7F7F7F),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const MyQrcodePage(),
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/icon/qr-code.svg',
-                              width: 16,
-                              height: 16,
-                              colorFilter: const ColorFilter.mode(
-                                Color(0xFF7F7F7F),
-                                BlendMode.srcIn,
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const MyQrcodePage(),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            SvgPicture.asset(
-                              'assets/icon/common/arrow-right.svg',
-                              width: 10,
-                              height: 16,
-                              colorFilter: const ColorFilter.mode(
-                                Color(0x73000000),
-                                BlendMode.srcIn,
+                            );
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icon/qr-code.svg',
+                                width: 16,
+                                height: 16,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFF7F7F7F),
+                                  BlendMode.srcIn,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE5E5E5)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.add, size: 14, color: Color(0xFF7F7F7F)),
-                            const SizedBox(width: 4),
-                            const Text(
-                              '状态',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF555555),
+                              const SizedBox(width: 12),
+                              SvgPicture.asset(
+                                'assets/icon/common/arrow-right.svg',
+                                width: 10,
+                                height: 16,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0x73000000),
+                                  BlendMode.srcIn,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Status bubble with friends
-                      Container(
-                         padding: const EdgeInsets.fromLTRB(4, 2, 8, 2),
-                         decoration: BoxDecoration(
-                           borderRadius: BorderRadius.circular(14),
-                           border: Border.all(color: const Color(0xFFE5E5E5)),
-                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                             _avatarStack(),
-                             const SizedBox(width: 4),
-                             const Text(
-                               '还有 9 位朋友',
-                               style: TextStyle(fontSize: 12, color: Color(0xFF7F7F7F)),
-                             ),
-                             const SizedBox(width: 4),
-                             Container(
-                               width: 6,
-                               height: 6,
-                               decoration: BoxDecoration(
-                                 color: const Color(0xFFF54A45),
-                                 shape: BoxShape.circle,
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFE5E5E5)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.add, size: 14, color: Color(0xFF7F7F7F)),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '状态',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF555555),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Status bubble with friends
+                        Container(
+                           padding: const EdgeInsets.fromLTRB(4, 2, 8, 2),
+                           decoration: BoxDecoration(
+                             borderRadius: BorderRadius.circular(14),
+                             border: Border.all(color: const Color(0xFFE5E5E5)),
+                           ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                               _avatarStack(),
+                               const SizedBox(width: 4),
+                               const Text(
+                                 '还有 9 位朋友',
+                                 style: TextStyle(fontSize: 12, color: Color(0xFF7F7F7F)),
                                ),
-                             ),
-                          ],
+                               const SizedBox(width: 4),
+                               Container(
+                                 width: 6,
+                                 height: 6,
+                                 decoration: BoxDecoration(
+                                   color: const Color(0xFFF54A45),
+                                   shape: BoxShape.circle,
+                                 ),
+                               ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
