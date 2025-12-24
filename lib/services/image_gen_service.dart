@@ -82,21 +82,15 @@ class ImageGenService {
         return null;
       }
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      // 在后台线程解析巨大的 JSON 响应
+      final result = await compute(_parseGenerateResponse, response.body);
 
-      // 提取 base64 图片数据
-      final dataList = data['data'] as List<dynamic>?;
-      if (dataList != null && dataList.isNotEmpty) {
-        final first = dataList[0] as Map<String, dynamic>;
-        final b64Json = first['b64_json'] as String?;
-        if (b64Json != null && b64Json.isNotEmpty) {
-          return b64Json;
-        }
-        // 备用：尝试获取 URL
-        final url = first['url'] as String?;
-        if (url != null && url.isNotEmpty) {
-          return await _downloadAndConvertToBase64(url);
-        }
+      if (result['b64'] != null) {
+        return result['b64'];
+      }
+      
+      if (result['url'] != null) {
+        return await _downloadAndConvertToBase64(result['url']!);
       }
 
       debugPrint('No image data in response');
@@ -105,6 +99,25 @@ class ImageGenService {
       debugPrint('Image generation error: $e');
       return null;
     }
+  }
+
+  /// 解析响应 (在 Isolate 中运行)
+  static Map<String, String?> _parseGenerateResponse(String body) {
+    try {
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      final dataList = data['data'] as List<dynamic>?;
+      
+      if (dataList != null && dataList.isNotEmpty) {
+        final first = dataList[0] as Map<String, dynamic>;
+        return {
+          'b64': first['b64_json'] as String?,
+          'url': first['url'] as String?,
+        };
+      }
+    } catch (e) {
+      debugPrint('Parse error: $e');
+    }
+    return {};
   }
 
   /// 从 URL 下载图片并转换为 base64

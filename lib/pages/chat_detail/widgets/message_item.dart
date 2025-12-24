@@ -29,40 +29,38 @@ class MessageItem extends StatefulWidget {
 
 class _MessageItemState extends State<MessageItem>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  AnimationController? _controller;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: AppStyles.animationNormal,
-    );
-    
-    _slideAnimation = Tween<double>(
-      begin: widget.message.isOutgoing ? 20.0 : -20.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
     if (widget.showAnimation) {
-      _controller.forward();
-    } else {
-      _controller.value = 1.0;
+      _controller = AnimationController(
+        vsync: this,
+        duration: AppStyles.animationNormal,
+      );
+      
+      _slideAnimation = Tween<double>(
+        begin: widget.message.isOutgoing ? 20.0 : -20.0,
+        end: 0.0,
+      ).animate(CurvedAnimation(
+        parent: _controller!,
+        curve: Curves.easeOutCubic,
+      ));
+      
+      _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _controller!, curve: Curves.easeOut),
+      );
+
+      _controller!.forward();
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -78,8 +76,14 @@ class _MessageItemState extends State<MessageItem>
     }
 
     // 普通消息
+    // 如果不需要动画，直接返回内容
+    if (!widget.showAnimation || _controller == null) {
+      return _buildNormalMessage();
+    }
+
+    // 需要动画
     return AnimatedBuilder(
-      animation: _controller,
+      animation: _controller!,
       builder: (context, child) {
         return Transform.translate(
           offset: Offset(_slideAnimation.value, 0),
