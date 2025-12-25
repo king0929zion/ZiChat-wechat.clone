@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zichat/constants/app_colors.dart';
@@ -213,23 +214,40 @@ class _MessageAvatar extends StatelessWidget {
       tag: 'avatar_$avatar',
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppStyles.radiusSmall),
-        child: Image.asset(
-          avatar,
-          width: 40,
-          height: 40,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: 40,
-              height: 40,
-              color: AppColors.background,
-              child: const Icon(
-                Icons.person,
-                color: AppColors.textSecondary,
-              ),
-            );
-          },
-        ),
+        child: _buildImage(),
+      ),
+    );
+  }
+  
+  Widget _buildImage() {
+    // 判断是 Asset 还是本地文件
+    if (avatar.startsWith('assets/')) {
+      return Image.asset(
+        avatar,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+      );
+    } else {
+      return Image.file(
+        File(avatar),
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+      );
+    }
+  }
+  
+  Widget _buildFallback() {
+    return Container(
+      width: 40,
+      height: 40,
+      color: AppColors.background,
+      child: const Icon(
+        Icons.person,
+        color: AppColors.textSecondary,
       ),
     );
   }

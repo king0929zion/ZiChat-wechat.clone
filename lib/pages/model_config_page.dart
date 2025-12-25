@@ -5,17 +5,15 @@ import 'package:zichat/constants/app_assets.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
 import 'package:zichat/pages/api_list_page.dart';
-import 'package:zichat/pages/ai_config_page.dart';
 import 'package:zichat/pages/model_selection_page.dart';
 import 'package:zichat/storage/api_config_storage.dart';
 import 'package:zichat/models/api_config.dart';
 
 /// 模型配置页面 - 统一的 AI 配置入口
 /// 
-/// 包含三个模块：
+/// 包含两个模块：
 /// 1. API 供应商配置 - 添加/管理 API 密钥
 /// 2. 模型选择 - 选择当前使用的对话模型
-/// 3. 系统提示词 - 全局人设设置
 class ModelConfigPage extends StatefulWidget {
   const ModelConfigPage({super.key});
 
@@ -98,13 +96,6 @@ class _ModelConfigPageState extends State<ModelConfigPage> {
                       subtitle: _activeConfig?.selectedModel ?? '请先配置 API 供应商',
                       onTap: () => _openModelSelection(),
                       enabled: _activeConfig != null,
-                    ),
-                    _ConfigTile(
-                      icon: Icons.person_rounded,
-                      iconColor: const Color(0xFF9C27B0),
-                      title: '系统提示词',
-                      subtitle: '配置 AI 的默认人设',
-                      onTap: () => _openAiConfig(),
                     ),
                   ],
                 ),
@@ -246,12 +237,7 @@ class _ModelConfigPageState extends State<ModelConfigPage> {
     _loadData();
   }
 
-  void _openAiConfig() {
-    HapticFeedback.lightImpact();
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AiConfigPage()),
-    );
-  }
+
 }
 
 class _ConfigTile extends StatelessWidget {

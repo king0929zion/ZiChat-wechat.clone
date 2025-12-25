@@ -189,8 +189,8 @@ class _AddFriendPageState extends State<AddFriendPage> {
             
             // 提示词输入
             _buildInputSection(
-              title: '人设提示词',
-              subtitle: '定义好友的性格、说话风格等（可选）',
+              title: '人设',
+              subtitle: '定义 TA 的性格和说话风格',
               child: TextField(
                 controller: _promptController,
                 maxLines: 5,
@@ -200,7 +200,7 @@ class _AddFriendPageState extends State<AddFriendPage> {
                   color: AppColors.textPrimary,
                 ),
                 decoration: InputDecoration(
-                  hintText: '例如：活泼开朗的大学生，喜欢动漫和游戏，说话很随意',
+                  hintText: '描述 TA 是怎样的一个人...',
                   hintStyle: const TextStyle(
                     color: AppColors.textHint,
                     fontSize: 16,
