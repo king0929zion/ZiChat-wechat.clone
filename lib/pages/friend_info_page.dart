@@ -321,7 +321,7 @@ class _FriendInfoPageState extends State<FriendInfoPage> {
               child: OutlinedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: '备注功能暂未开放'),
+                    const SnackBar(content: Text('备注功能暂未开放')),
                   );
                 },
                 style: OutlinedButton.styleFrom(

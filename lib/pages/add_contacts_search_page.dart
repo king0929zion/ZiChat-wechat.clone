@@ -115,7 +115,7 @@ class _AddContactsSearchPageState extends State<AddContactsSearchPage> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: '已发送好友验证申请'),
+        const SnackBar(content: Text('已发送好友验证申请')),
       );
     }
   }

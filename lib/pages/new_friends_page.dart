@@ -259,10 +259,12 @@ class _FriendRequestItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: isLast
             ? null
-            : const Border(
-                bottom: BorderSide(
-                  color: Color(0xFFF0F0F0),
-                  width: 0.5,
+            : BoxDecoration(
+                border: const Border(
+                  bottom: BorderSide(
+                    color: Color(0xFFF0F0F0),
+                    width: 0.5,
+                  ),
                 ),
               ),
         child: Row(
