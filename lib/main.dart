@@ -12,6 +12,7 @@ import 'package:zichat/services/user_data_manager.dart';
 import 'package:zichat/storage/api_config_storage.dart';
 import 'package:zichat/storage/chat_background_storage.dart';
 import 'package:zichat/storage/friend_storage.dart';
+import 'package:zichat/storage/real_friend_storage.dart';
 import 'package:zichat/storage/user_profile_storage.dart';
 import 'package:zichat/widgets/splash_screen.dart';
 
@@ -51,6 +52,7 @@ Future<void> _initializeCoreServices() async {
   await Future.wait([
     Hive.openBox('chat_messages'),
     Hive.openBox('ai_config'),
+    Hive.openBox('real_friends'),
   ]);
 
   // 并行初始化核心存储服务
@@ -59,6 +61,7 @@ Future<void> _initializeCoreServices() async {
     ChatBackgroundStorage.initialize(),
     ApiConfigStorage.initialize(),
     UserProfileStorage.initialize(),
+    RealFriendStorage.initialize(),
   ]);
 
   // 初始化用户数据管理器（支持头像/昵称实时更新）

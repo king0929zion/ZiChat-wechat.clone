@@ -1,27 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zichat/constants/app_assets.dart';
+import 'package:zichat/constants/app_colors.dart';
+import 'package:zichat/models/real_friend.dart';
 import 'package:zichat/pages/add_contacts_page.dart';
 import 'package:zichat/pages/friend_info_page.dart';
+import 'package:zichat/services/avatar_utils.dart';
+import 'package:zichat/storage/real_friend_storage.dart';
 
-class NewFriendsPage extends StatelessWidget {
+class NewFriendsPage extends StatefulWidget {
   const NewFriendsPage({super.key});
 
-  static const List<_FriendRequest> _mockRequests = [
-    _FriendRequest(
-      id: 'req1',
-      name: 'ZION.',
-      avatar: 'assets/bella.jpeg',
-      message: 'Hi，我想加你为好友',
-      status: '等待验证',
-    ),
-    _FriendRequest(
-      id: 'req2',
-      name: 'Bella',
-      avatar: 'assets/avatar.png',
-      message: '你好，我想加你为朋友',
-      status: '已通过',
-    ),
-  ];
+  @override
+  State<NewFriendsPage> createState() => _NewFriendsPageState();
+}
+
+class _NewFriendsPageState extends State<NewFriendsPage> {
+  List<RealFriend> _pendingRequests = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRequests();
+  }
+
+  void _loadRequests() {
+    setState(() {
+      _pendingRequests = RealFriendStorage.getPendingRequests();
+      _isLoading = false;
+    });
+  }
+
+  void _onRequestTap(RealFriend request) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FriendInfoPage(friendId: request.id),
+      ),
+    ).then((_) => _loadRequests());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +86,7 @@ class NewFriendsPage extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             padding: const EdgeInsets.all(8),
             icon: SvgPicture.asset(
-              'assets/icon/common/go-back.svg',
+              AppAssets.iconGoBack,
               width: 12,
               height: 20,
               colorFilter: const ColorFilter.mode(
@@ -132,7 +150,7 @@ class NewFriendsPage extends StatelessWidget {
           child: Row(
             children: [
               SvgPicture.asset(
-                'assets/icon/common/search.svg',
+                AppAssets.iconSearch,
                 width: 16,
                 height: 16,
                 colorFilter: const ColorFilter.mode(
@@ -182,20 +200,39 @@ class NewFriendsPage extends StatelessWidget {
   }
 
   Widget _buildFriendRequests(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // 合并真实请求和模拟请求
+    final allRequests = [..._pendingRequests];
+
+    if (allRequests.isEmpty) {
+      return Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(32),
+        child: const Center(
+          child: Text(
+            '暂无新的好友请求',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF8A8F99),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         children: [
-          for (int i = 0; i < _mockRequests.length; i++)
+          for (int i = 0; i < allRequests.length; i++)
             _FriendRequestItem(
-              data: _mockRequests[i],
-              isLast: i == _mockRequests.length - 1,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const FriendInfoPage()),
-                );
-              },
+              request: allRequests[i],
+              isLast: i == allRequests.length - 1,
+              onTap: () => _onRequestTap(allRequests[i]),
             ),
         ],
       ),
@@ -203,30 +240,14 @@ class NewFriendsPage extends StatelessWidget {
   }
 }
 
-class _FriendRequest {
-  const _FriendRequest({
-    required this.id,
-    required this.name,
-    required this.avatar,
-    required this.message,
-    required this.status,
-  });
-
-  final String id;
-  final String name;
-  final String avatar;
-  final String message;
-  final String status;
-}
-
 class _FriendRequestItem extends StatelessWidget {
   const _FriendRequestItem({
-    required this.data,
+    required this.request,
     required this.isLast,
     required this.onTap,
   });
 
-  final _FriendRequest data;
+  final RealFriend request;
   final bool isLast;
   final VoidCallback onTap;
 
@@ -236,26 +257,20 @@ class _FriendRequestItem extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: isLast
-              ? null
-              : const Border(
-                  bottom: BorderSide(
-                    color: Color(0xFFF0F0F0),
-                    width: 0.5,
-                  ),
+        decoration: isLast
+            ? null
+            : const Border(
+                bottom: BorderSide(
+                  color: Color(0xFFF0F0F0),
+                  width: 0.5,
                 ),
-        ),
+              ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.asset(
-                data.avatar,
-                width: 42,
-                height: 42,
-                fit: BoxFit.cover,
-              ),
+            AvatarUtils.buildAvatarWidget(
+              request.avatar,
+              size: 42,
+              borderRadius: 6,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -263,7 +278,7 @@ class _FriendRequestItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data.name,
+                    request.name,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -272,7 +287,7 @@ class _FriendRequestItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    data.message,
+                    '微信号：${request.wechatId}',
                     style: const TextStyle(
                       fontSize: 13,
                       color: Color(0xFF8A8F99),
@@ -286,7 +301,7 @@ class _FriendRequestItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SvgPicture.asset(
-                  'assets/icon/common/arrow-right.svg',
+                  AppAssets.iconArrowRight,
                   width: 12,
                   height: 12,
                   colorFilter: const ColorFilter.mode(
@@ -296,7 +311,7 @@ class _FriendRequestItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  data.status,
+                  _getStatusText(),
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF6E727A),
@@ -308,5 +323,16 @@ class _FriendRequestItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getStatusText() {
+    switch (request.status) {
+      case FriendRequestStatus.pending:
+        return '等待验证';
+      case FriendRequestStatus.approved:
+        return '已通过';
+      case FriendRequestStatus.rejected:
+        return '已拒绝';
+    }
   }
 }

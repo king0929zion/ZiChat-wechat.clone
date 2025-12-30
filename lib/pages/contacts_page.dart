@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/models/friend.dart';
+import 'package:zichat/models/real_friend.dart';
 import 'package:zichat/pages/add_friend_page.dart';
+import 'package:zichat/pages/friend_info_page.dart';
 import 'package:zichat/pages/new_friends_page.dart';
 import 'package:zichat/services/avatar_utils.dart';
 import 'package:zichat/services/user_data_manager.dart';
 import 'package:zichat/storage/friend_storage.dart';
+import 'package:zichat/storage/real_friend_storage.dart';
 
 class ContactsPage extends StatefulWidget {
   const ContactsPage({super.key});
@@ -18,11 +21,12 @@ class ContactsPage extends StatefulWidget {
 
 class _ContactsPageState extends State<ContactsPage> {
   List<Friend> _customFriends = [];
+  List<RealFriend> _realFriends = [];
 
   @override
   void initState() {
     super.initState();
-    _loadCustomFriends();
+    _loadFriends();
     UserDataManager.instance.addListener(_onUserDataChanged);
   }
 
@@ -34,14 +38,23 @@ class _ContactsPageState extends State<ContactsPage> {
 
   void _onUserDataChanged() {
     if (mounted) {
-      _loadCustomFriends();
+      _loadFriends();
     }
   }
 
-  void _loadCustomFriends() {
+  void _loadFriends() {
     setState(() {
       _customFriends = FriendStorage.getAllFriends();
+      _realFriends = RealFriendStorage.getApprovedFriends();
     });
+  }
+
+  void _onRealFriendTap(RealFriend friend) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FriendInfoPage(friendId: friend.id),
+      ),
+    ).then((_) => _loadFriends());
   }
 
   @override
@@ -50,7 +63,9 @@ class _ContactsPageState extends State<ContactsPage> {
     const Color line = Color(0xFFE5E6EB);
     const Color textSub = Color(0xFF86909C);
 
-    final totalFriends = _customFriends.length;
+    final totalAiFriends = _customFriends.length;
+    final totalRealFriends = _realFriends.length;
+    final totalFriends = totalAiFriends + totalRealFriends;
 
     return Container(
       color: bg,
@@ -93,7 +108,27 @@ class _ContactsPageState extends State<ContactsPage> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
+          // 真实好友
+          if (_realFriends.isNotEmpty) ...[
+            Container(
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _ContactsSectionHeader(label: '朋友'),
+                  for (int i = 0; i < _realFriends.length; i++)
+                    _RealFriendItem(
+                      friend: _realFriends[i],
+                      showDivider: i != _realFriends.length - 1,
+                      onTap: () => _onRealFriendTap(_realFriends[i]),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+
           // 我创建的 AI 好友
           if (_customFriends.isNotEmpty) ...[
             Container(
@@ -113,7 +148,7 @@ class _ContactsPageState extends State<ContactsPage> {
                           ),
                         );
                         if (result != null) {
-                          _loadCustomFriends();
+                          _loadFriends();
                         }
                       },
                       onDelete: () async {
@@ -136,7 +171,7 @@ class _ContactsPageState extends State<ContactsPage> {
                         );
                         if (confirm == true) {
                           await FriendStorage.deleteFriend(_customFriends[i].id);
-                          _loadCustomFriends();
+                          _loadFriends();
                         }
                       },
                     ),
@@ -158,6 +193,82 @@ class _ContactsPageState extends State<ContactsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 真实好友列表项
+class _RealFriendItem extends StatelessWidget {
+  const _RealFriendItem({
+    required this.friend,
+    required this.showDivider,
+    required this.onTap,
+  });
+
+  final RealFriend friend;
+  final bool showDivider;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          children: [
+            const SizedBox(width: 16),
+            AvatarUtils.buildAvatarWidget(
+              friend.avatar.isEmpty ? AvatarUtils.defaultFriendAvatar : friend.avatar,
+              size: 42,
+              borderRadius: 4,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                alignment: Alignment.centerLeft,
+                decoration: showDivider
+                    ? const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Color(0xFFE5E6EB),
+                            width: 0.5,
+                          ),
+                        ),
+                      )
+                    : null,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      friend.name,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        color: Color(0xFF1D2129),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (friend.signature != null && friend.signature!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        friend.signature!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF86909C),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

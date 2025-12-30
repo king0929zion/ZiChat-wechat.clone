@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zichat/constants/app_colors.dart';
 import 'package:zichat/constants/app_styles.dart';
+import 'package:zichat/models/real_friend.dart';
 import 'package:zichat/pages/chat_detail/chat_detail_page.dart';
 import 'package:zichat/services/avatar_utils.dart';
 import 'package:zichat/services/chat_event_manager.dart';
 import 'package:zichat/services/user_data_manager.dart';
 import 'package:zichat/storage/friend_storage.dart';
+import 'package:zichat/storage/real_friend_storage.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
@@ -48,13 +50,25 @@ class _ChatsPageState extends State<ChatsPage> {
       setState(() {});
     }
   }
-  
-  void _loadChats() {
-    // 加载自定义好友
-    final friends = FriendStorage.getAllFriends();
 
-    // 转换为聊天列表项
-    final friendChats = friends.map((f) => _ChatItemData(
+  void _loadChats() {
+    // 加载真实好友聊天
+    final realFriends = RealFriendStorage.getApprovedFriends();
+    final realChats = realFriends.map((f) => _ChatItemData(
+      id: 'real_${f.id}',
+      title: f.name,
+      avatar: f.avatar,
+      latestMessage: f.lastMessage ?? '开始聊天吧',
+      latestTime: _formatTime(f.lastMessageTime),
+      unread: f.unread,
+      muted: false,
+      isAiFriend: false,
+      prompt: null,
+    )).toList();
+
+    // 加载 AI 好友
+    final aiFriends = FriendStorage.getAllFriends();
+    final aiChats = aiFriends.map((f) => _ChatItemData(
       id: f.id,
       title: f.name,
       avatar: f.avatar,
@@ -66,15 +80,20 @@ class _ChatsPageState extends State<ChatsPage> {
       prompt: f.prompt,
     )).toList();
 
-    // 添加默认好友（如果没有自定义好友）
-    final allChats = friendChats.isEmpty ? [_defaultChat] : friendChats;
+    // 合并所有聊天
+    final allChats = [...realChats, ...aiChats];
+
+    // 如果没有任何聊天，添加默认 AI 助手
+    if (allChats.isEmpty) {
+      allChats.add(_defaultChat);
+    }
 
     // 按最后消息时间排序（有消息的排前面）
     allChats.sort((a, b) {
       if (a.latestTime == b.latestTime) return 0;
       if (a.latestTime == '开始聊天吧') return 1;
       if (b.latestTime == '开始聊天吧') return -1;
-      return 0; // 保持原顺序
+      return 0;
     });
 
     setState(() {
