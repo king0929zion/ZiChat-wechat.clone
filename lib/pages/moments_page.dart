@@ -115,15 +115,21 @@ class _MomentsPageState extends State<MomentsPage> {
                 }
               },
               padding: const EdgeInsets.all(8),
-              icon: SvgPicture.asset(
-                'assets/icon/common/camera-outline.svg',
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(
-                  _scrolled ? null : const Color(0xFFFFFFFF),
-                  BlendMode.srcIn,
-                ),
-              ),
+              icon: _scrolled
+                  ? SvgPicture.asset(
+                      'assets/icon/common/camera-outline.svg',
+                      width: 24,
+                      height: 24,
+                    )
+                  : SvgPicture.asset(
+                      'assets/icon/common/camera-outline.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFFFFFFFF),
+                        BlendMode.srcIn,
+                      ),
+                    ),
             ),
           ],
         ),
