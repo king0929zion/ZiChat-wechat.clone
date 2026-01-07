@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
+import 'package:zichat/constants/app_constants.dart';
 import 'package:zichat/models/api_config.dart';
 import 'package:zichat/services/ai_tools_service.dart';
 import 'package:zichat/storage/api_config_storage.dart';
@@ -16,12 +17,6 @@ class AiChatService {
 
   // 对话历史缓存 (内存中)
   static final Map<String, List<_HistoryItem>> _historyCache = {};
-
-  // 最大历史条数
-  static const int _maxHistoryItems = 20;
-
-  // 最大 token 估算 (用于控制上下文长度)
-  static const int _maxContextTokens = 3000;
 
   // 随机数生成器
   static final _random = math.Random();
@@ -38,7 +33,7 @@ class AiChatService {
 
   /// 获取当前活动的 API 配置
   static Future<ApiConfig> _getActiveConfig() async {
-    final config = ApiConfigStorage.getActiveConfig();
+    final config = await ApiConfigStorage.getActiveConfig();
     if (config == null || config.models.isEmpty) {
       throw Exception(
         '请先在"我-设置-通用-API 管理"中添加并配置 API',
@@ -60,8 +55,11 @@ class AiChatService {
     // 使用配置的选定模型（或第一个作为后备）
     final model = config.selectedModel ?? config.models.first;
 
-    // 模拟真人回复延迟 (800ms - 2000ms)
-    final initialDelay = 800 + _random.nextInt(1200);
+    // 模拟真人回复延迟
+    final initialDelay = AppConstants.minHumanLikeDelay +
+        _random.nextInt(
+          AppConstants.maxHumanLikeDelay - AppConstants.minHumanLikeDelay,
+        );
     await Future.delayed(Duration(milliseconds: initialDelay));
 
     // 构建系统提示词
@@ -185,7 +183,7 @@ class AiChatService {
       final item = history[i];
       final tokens = _estimateTokens(item.content);
 
-      if (tokenCount + tokens > _maxContextTokens) break;
+      if (tokenCount + tokens > AppConstants.maxContextTokens) break;
 
       tokenCount += tokens;
       result.insert(0, {
@@ -203,7 +201,7 @@ class AiChatService {
     _historyCache[chatId]!.add(_HistoryItem(role: role, content: content));
 
     // 限制历史长度
-    if (_historyCache[chatId]!.length > _maxHistoryItems) {
+    if (_historyCache[chatId]!.length > AppConstants.maxChatHistoryItems) {
       _historyCache[chatId]!.removeAt(0);
     }
   }

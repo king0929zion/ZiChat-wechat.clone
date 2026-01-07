@@ -369,10 +369,10 @@ class AiSoulEngine {
   
   /// 使用 AI 生成更丰富的事件
   Future<LifeEvent?> generateAiEvent() async {
-    if (!ApiConfigStorage.hasConfig()) return null;
+    if (!await ApiConfigStorage.hasConfig()) return null;
 
     try {
-      final config = ApiConfigStorage.getActiveConfig();
+      final config = await ApiConfigStorage.getActiveConfig();
       if (config == null || config.models.isEmpty) return null;
 
       final prompt = '''

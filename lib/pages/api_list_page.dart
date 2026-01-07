@@ -25,9 +25,10 @@ class _ApiListPageState extends State<ApiListPage> {
     _loadConfigs();
   }
 
-  void _loadConfigs() {
+  void _loadConfigs() async {
+    final configs = await ApiConfigStorage.getAllConfigs();
     setState(() {
-      _configs = ApiConfigStorage.getAllConfigs();
+      _configs = configs;
     });
   }
 

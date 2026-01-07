@@ -14,19 +14,22 @@ class AiToolsService {
   
   /// 解析 AI 回复中的工具调用
   /// 格式: `<tool>tool_name(param)</tool>`
-  static List<AiToolCall> parseToolCalls(String response) {
+  static Future<List<AiToolCall>> parseToolCalls(String response) async {
     final calls = <AiToolCall>[];
-    
+
+    // 检查图片生成服务是否可用
+    final imageGenAvailable = await ImageGenService.isAvailable;
+
     // 匹配 <tool>xxx(param)</tool> 格式，支持嵌套括号
     final toolPattern = RegExp(r'<tool>(\w+)[（(](.+?)[)）]</tool>');
-    
+
     for (final match in toolPattern.allMatches(response)) {
       final toolName = match.group(1)?.toLowerCase() ?? '';
       final param = match.group(2)?.trim() ?? '';
-      
+
       switch (toolName) {
         case 'image_gen':
-          if (param.isNotEmpty && ImageGenService.isAvailable) {
+          if (param.isNotEmpty && imageGenAvailable) {
             calls.add(AiToolCall(
               type: AiToolType.generateImage,
               params: {'prompt': param},
@@ -56,18 +59,18 @@ class AiToolsService {
     }
     
     // 兼容旧格式 (无 <tool> 标签)
-    _parseOldFormat(response, calls);
-    
+    await _parseOldFormat(response, calls, imageGenAvailable);
+
     return calls;
   }
   
   /// 解析旧格式工具调用（兼容）
-  static void _parseOldFormat(String response, List<AiToolCall> calls) {
+  static Future<void> _parseOldFormat(String response, List<AiToolCall> calls, bool imageGenAvailable) async {
     // image_gen(xxx) 无标签格式
     final genPattern = RegExp(r'(?<!</tool>)image_gen\(([^)]+)\)(?!</tool>)');
     for (final match in genPattern.allMatches(response)) {
       final prompt = match.group(1)?.trim() ?? '';
-      if (prompt.isNotEmpty && ImageGenService.isAvailable) {
+      if (prompt.isNotEmpty && imageGenAvailable) {
         // 检查是否已添加
         final exists = calls.any((c) => 
           c.type == AiToolType.generateImage && c.params['prompt'] == prompt);

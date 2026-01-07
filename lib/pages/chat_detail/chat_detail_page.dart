@@ -429,7 +429,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       }
       
       // 解析工具调用
-      final toolCalls = AiToolsService.parseToolCalls(filteredText);
+      final toolCalls = await AiToolsService.parseToolCalls(filteredText);
       
       // 移除工具标记后的文本
       final cleanText = AiToolsService.removeToolMarkers(filteredText);

@@ -8,14 +8,14 @@ import 'package:zichat/storage/api_config_storage.dart';
 /// 支持 OpenAI 兼容格式的图像生成 API（如 DALL-E）
 class ImageGenService {
   /// 检查是否可用
-  static bool get isAvailable {
-    final config = ApiConfigStorage.getActiveConfig();
+  static Future<bool> get isAvailable async {
+    final config = await ApiConfigStorage.getActiveConfig();
     return config != null && config.models.isNotEmpty;
   }
 
   /// 获取用于图像生成的 API 配置
-  static ApiConfig? _getImageConfig() {
-    final allConfigs = ApiConfigStorage.getAllConfigs();
+  static Future<ApiConfig?> _getImageConfig() async {
+    final allConfigs = await ApiConfigStorage.getAllConfigs();
     // 优先选择支持图像生成的配置
     for (final config in allConfigs) {
       if (config.models.any((m) => m.toLowerCase().contains('dall') ||
@@ -25,7 +25,7 @@ class ImageGenService {
       }
     }
     // 否则返回活动配置
-    return ApiConfigStorage.getActiveConfig();
+    return await ApiConfigStorage.getActiveConfig();
   }
 
   /// 生成图片
@@ -36,7 +36,7 @@ class ImageGenService {
     int? width,
     int? height,
   }) async {
-    final config = _getImageConfig();
+    final config = await _getImageConfig();
     if (config == null) {
       debugPrint('Image generation API not available');
       return null;

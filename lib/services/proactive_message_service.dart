@@ -52,7 +52,7 @@ class ProactiveMessageService {
   /// 检查并触发主动消息
   Future<void> _checkAndTrigger() async {
     // 检查是否有配置的 API
-    final config = ApiConfigStorage.getActiveConfig();
+    final config = await ApiConfigStorage.getActiveConfig();
     if (config == null || config.models.isEmpty) {
       return; // 没有配置 API，不触发
     }

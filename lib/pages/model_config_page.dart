@@ -31,10 +31,12 @@ class _ModelConfigPageState extends State<ModelConfigPage> {
     _loadData();
   }
 
-  void _loadData() {
+  void _loadData() async {
+    final activeConfig = await ApiConfigStorage.getActiveConfig();
+    final allConfigs = await ApiConfigStorage.getAllConfigs();
     setState(() {
-      _activeConfig = ApiConfigStorage.getActiveConfig();
-      _totalProviders = ApiConfigStorage.getAllConfigs().length;
+      _activeConfig = activeConfig;
+      _totalProviders = allConfigs.length;
     });
   }
 

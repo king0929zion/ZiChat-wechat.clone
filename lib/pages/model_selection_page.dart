@@ -28,10 +28,10 @@ class _ModelSelectionPageState extends State<ModelSelectionPage> {
     _loadData();
   }
 
-  void _loadData() {
-    final configs = ApiConfigStorage.getAllConfigs();
+  void _loadData() async {
+    final configs = await ApiConfigStorage.getAllConfigs();
     final active = configs.where((c) => c.isActive).firstOrNull;
-    
+
     setState(() {
       _configs = configs;
       _selectedConfigId = active?.id;
